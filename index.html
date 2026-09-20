@@ -114,9 +114,7 @@
         .breadcrumb span:hover { color: var(--accent); }
         .breadcrumb .sep { color: var(--border-strong); }
         .breadcrumb .current { color: var(--text-secondary); font-weight: 500; }
-        .page-header {
-            margin-bottom: 28px;
-        }
+        .page-header { margin-bottom: 28px; }
         .page-title {
             font-size: 26px;
             font-weight: 600;
@@ -124,10 +122,7 @@
             color: var(--text-primary);
             margin-bottom: 8px;
         }
-        .page-sub {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
+        .page-sub { color: var(--text-secondary); font-size: 14px; }
         .card {
             background: var(--surface);
             border: 1.5px solid var(--border);
@@ -230,9 +225,7 @@
         .autocomplete-suggestions .suggestion:hover {
             background: var(--accent-light);
         }
-        .autocomplete-suggestions .suggestion:last-child {
-            border-bottom: none;
-        }
+        .autocomplete-suggestions .suggestion:last-child { border-bottom: none; }
         .add-product {
             background: var(--surface);
             border: 1.5px solid var(--border);
@@ -424,6 +417,7 @@
             transition: 0.18s;
             border: none;
             outline: none;
+            text-decoration: none;
         }
         .btn-ghost {
             background: transparent;
@@ -454,6 +448,17 @@
             background: #15885b;
             transform: translateY(-1px);
         }
+        .btn-link {
+            background: var(--surface-alt);
+            color: var(--text-secondary);
+            border: 1.5px solid var(--border-strong);
+            font-size: 12px;
+            padding: 6px 14px;
+        }
+        .btn-link:hover {
+            background: var(--border);
+            color: var(--text-primary);
+        }
         .footer-right { display: flex; align-items: center; gap: 10px; }
         .toast {
             position: fixed;
@@ -477,6 +482,36 @@
         .edit-mode {
             border: 2px solid var(--accent) !important;
             background: var(--accent-light) !important;
+        }
+        .status-bar {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 16px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .status-bar .status-ok { color: var(--green); font-weight: 600; }
+        .status-bar .status-error { color: var(--red); font-weight: 600; }
+        .status-bar .btn-reload {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            color: var(--text-secondary);
+            transition: 0.15s;
+        }
+        .status-bar .btn-reload:hover {
+            background: var(--bg);
+            border-color: var(--border-strong);
         }
         @media (max-width: 800px) {
             .card-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -513,6 +548,12 @@
         <div class="page-sub">Registre produtos vencidos, danificados ou rebaixados.</div>
     </div>
 
+    <!-- Status do catálogo -->
+    <div class="status-bar" id="statusBar">
+        <span id="statusTexto">🔄 Carregando catálogo...</span>
+        <button class="btn-reload" onclick="recarregarCatalogo()">⟳ Recarregar</button>
+    </div>
+
     <!-- Dados do lançamento -->
     <div class="card">
         <div class="card-grid">
@@ -538,7 +579,7 @@
         </div>
     </div>
 
-    <!-- BARRA DE PESQUISA (autocomplete por descrição) -->
+    <!-- BARRA DE PESQUISA -->
     <div class="search-bar">
         <span class="search-icon">🔍</span>
         <input type="text" id="pesquisaProduto" placeholder="Buscar produto por descrição (ex: 'abacate')" autocomplete="off">
@@ -624,9 +665,13 @@
 </div>
 
 <div class="toast" id="toast">✓ Item adicionado</div>
+
+<!-- FOOTER COM AÇÕES E LINKS -->
 <div class="footer-actions">
     <button class="btn btn-ghost" onclick="limparLista()">🗑️ Limpar tudo</button>
     <div class="footer-right">
+        <a class="btn btn-link" href="https://docs.google.com/spreadsheets/d/1lTMgpWRe3UeBCPFeAqUYmszWd284N2Q7378b3j6nZk4/edit?gid=0#gid=0" target="_blank">📋 Histórico</a>
+        <a class="btn btn-link" href="https://docs.google.com/spreadsheets/d/15MDwFquCAJIvM2pFr-WozERjTGRnpIkK7Y_Zw4LXPrk/edit?gid=0#gid=0" target="_blank">📦 Cadastro</a>
         <button class="btn btn-primary" onclick="adicionarItem()">➕ Adicionar item</button>
         <button class="btn btn-success" onclick="finalizar()">✓ Finalizar</button>
     </div>
@@ -634,14 +679,19 @@
 
 <script>
     // ============================================================
-    // URL DO APPS SCRIPT (SUBSTITUA PELA SUA URL)
+    // URL DO CSV DA PLANILHA DE PRODUTOS
     // ============================================================
-    const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbz1jgZfxN68852c6OjZSJspAxpbvENXEHWV-cQuH6s_46e6b-trTU0LQbn49ZuG99IC/exec';
+    const URL_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQRhvQFKwwde7gCktDWXJJ-3G3eETE51T6JhptQr-9DqgADIKdvt7YpPQByY8ksRthvIMdNNhuRKuo2/pub?output=csv';
 
     // ============================================================
-    // CATÁLOGO DE PRODUTOS
+    // URL DO APPS SCRIPT (HISTÓRICO DE QUEBRAS)
     // ============================================================
-    const catalogo = [
+    const URL_SCRIPT = 'COLOQUE_A_URL_DO_SEU_WEB_APP_AQUI';
+
+    // ============================================================
+    // CATÁLOGO DE FALLBACK
+    // ============================================================
+    const catalogoFallback = [
         { sku: '1', codbarra: '1', descricao: 'ABACATE KG', unidade: 'KG', fator: 18 },
         { sku: '2', codbarra: '2', descricao: 'ABACATE BREDA KG', unidade: 'UN', fator: 1 },
         { sku: '3', codbarra: '3', descricao: 'ABACATE FORTUNE KG', unidade: 'UN', fator: 18 },
@@ -651,8 +701,9 @@
     ];
 
     // ============================================================
-    // VARIÁVEIS
+    // VARIÁVEIS GLOBAIS
     // ============================================================
+    let catalogo = [];
     let itens = [];
     let editandoIndex = null;
 
@@ -669,6 +720,86 @@
     const suggestionsDiv = document.getElementById('suggestionsPesquisa');
     const btnAdicionar = document.getElementById('btnAdicionar');
     const btnSalvarEdicao = document.getElementById('btnSalvarEdicao');
+    const statusTexto = document.getElementById('statusTexto');
+
+    // ============================================================
+    // CARREGAR CATÁLOGO DO CSV
+    // ============================================================
+    async function carregarCatalogo() {
+        try {
+            statusTexto.textContent = '🔄 Baixando catálogo da planilha...';
+            console.log('🔄 Baixando catálogo da planilha...');
+
+            const resposta = await fetch(URL_CSV);
+            if (!resposta.ok) throw new Error(`Erro HTTP: ${resposta.status}`);
+
+            const csv = await resposta.text();
+            const linhas = csv.split('\n').filter(l => l.trim() !== '');
+            if (linhas.length === 0) throw new Error('CSV vazio');
+
+            const primeiraLinha = linhas[0];
+            const separador = primeiraLinha.includes(';') ? ';' : ',';
+            const cabecalho = primeiraLinha.split(separador).map(c => c.trim().toUpperCase());
+            console.log('📋 Cabeçalho detectado:', cabecalho);
+
+            const idx = {
+                codigo:    cabecalho.findIndex(c => /CODIGO|CÓDIGO|SKU/.test(c)),
+                codbarra:  cabecalho.findIndex(c => /CODBARRA|CODBARR|COD\.BARRAS|BARRAS/.test(c)),
+                descricao: cabecalho.findIndex(c => /DESCRICAO|DESCRIÇÃO|PRODUTO/.test(c)),
+                unidade:   cabecalho.findIndex(c => /UNIDADE|^UN$/.test(c)),
+                fator:     cabecalho.findIndex(c => /FATORCX|FATOR/.test(c))
+            };
+
+            if (idx.codigo === -1)    idx.codigo = 0;
+            if (idx.codbarra === -1)  idx.codbarra = 1;
+            if (idx.descricao === -1) idx.descricao = 2;
+            if (idx.unidade === -1)   idx.unidade = 3;
+            if (idx.fator === -1)     idx.fator = 4;
+
+            console.log('📍 Índices mapeados:', idx);
+
+            const carregado = [];
+            for (let i = 1; i < linhas.length; i++) {
+                const cols = linhas[i].split(separador).map(c => c.trim());
+                if (cols.length <= Math.max(idx.codigo, idx.codbarra, idx.descricao)) continue;
+
+                const codbarra = cols[idx.codbarra] || '';
+                if (codbarra === '' || codbarra.toUpperCase() === 'SEM GTIN') continue;
+
+                carregado.push({
+                    sku: cols[idx.codigo] || '',
+                    codbarra: codbarra,
+                    descricao: cols[idx.descricao] || '',
+                    unidade: cols[idx.unidade] || 'UN',
+                    fator: parseInt(cols[idx.fator]) || 1
+                });
+            }
+
+            if (carregado.length === 0) throw new Error('Nenhum produto válido encontrado');
+
+            catalogo = carregado;
+            statusTexto.innerHTML = `✅ Catálogo carregado: <strong>${catalogo.length}</strong> produtos (via CSV)`;
+            console.log(`✅ Catálogo carregado: ${catalogo.length} produtos`);
+            return catalogo;
+
+        } catch (erro) {
+            console.error('❌ Erro ao carregar catálogo:', erro);
+            catalogo = catalogoFallback;
+            statusTexto.innerHTML = `⚠️ Usando catálogo de fallback: <strong>${catalogo.length}</strong> produtos (erro: ${erro.message})`;
+            console.log(`⚠️ Usando catálogo de fallback: ${catalogo.length} produtos`);
+            return catalogo;
+        }
+    }
+
+    // ============================================================
+    // RECARREGAR CATÁLOGO (botão)
+    // ============================================================
+    async function recarregarCatalogo() {
+        await carregarCatalogo();
+        showToast('🔄 Catálogo recarregado!');
+        const query = pesquisaInput.value.trim();
+        if (query) pesquisaInput.dispatchEvent(new Event('input'));
+    }
 
     // ============================================================
     // GERAR ID ÚNICO PARA A QUEBRA
@@ -1046,7 +1177,6 @@
             if (!confirm('⚠️ Não foi possível salvar no histórico. Deseja continuar mesmo assim?')) return;
         }
 
-        // Gerar resumo para impressão
         const loja = document.getElementById('loja').value;
         const operador = document.getElementById('operador').value.trim() || 'Não informado';
         const dataHora = document.getElementById('dataHora').value;
@@ -1103,9 +1233,13 @@
     });
 
     // ============================================================
-    // INICIALIZAR
+    // INICIALIZAR — carrega catálogo e depois renderiza
     // ============================================================
-    renderizarTabela();
+    (async function init() {
+        await carregarCatalogo();
+        renderizarTabela();
+        console.log(`✅ App iniciado com ${catalogo.length} produtos disponíveis`);
+    })();
 </script>
 </body>
 </html>
