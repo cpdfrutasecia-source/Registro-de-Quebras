@@ -267,12 +267,12 @@
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(42,157,143,0.12);
         }
-        .add-field input[type="number"] { width: 80px; }
+        .add-field input[type="number"] { width: 90px; }
         .add-field.descricao { flex: 2.5; }
         .add-field.busca { flex: 1; }
         .add-field.tipo { flex: 0.9; }
         .add-field.motivo { flex: 1.2; }
-        .add-field.qtd { flex: 0.6; }
+        .add-field.qtd { flex: 0.7; }
         .btn-add {
             padding: 8px 20px;
             background: var(--accent);
@@ -548,13 +548,11 @@
         <div class="page-sub">Registre produtos vencidos, danificados ou rebaixados.</div>
     </div>
 
-    <!-- Status do catálogo -->
     <div class="status-bar" id="statusBar">
         <span id="statusTexto">🔄 Carregando catálogo...</span>
         <button class="btn-reload" onclick="recarregarCatalogo()">⟳ Recarregar</button>
     </div>
 
-    <!-- Dados do lançamento -->
     <div class="card">
         <div class="card-grid">
             <div class="field">
@@ -579,14 +577,12 @@
         </div>
     </div>
 
-    <!-- BARRA DE PESQUISA -->
     <div class="search-bar">
         <span class="search-icon">🔍</span>
         <input type="text" id="pesquisaProduto" placeholder="Buscar produto por descrição (ex: 'abacate')" autocomplete="off">
         <div class="autocomplete-suggestions" id="suggestionsPesquisa"></div>
     </div>
 
-    <!-- FORMULÁRIO DE ADIÇÃO -->
     <div class="add-product" id="formAdicionar">
         <div class="add-field busca">
             <label>Cód. Barras</label>
@@ -619,7 +615,7 @@
         </div>
         <div class="add-field qtd">
             <label>Qtd</label>
-            <input type="number" id="qtdProd" value="1" min="1" />
+            <input type="number" id="qtdProd" value="1" min="0.001" step="0.001" />
         </div>
         <div class="add-field" style="flex: 0.5;">
             <label>Un.</label>
@@ -629,7 +625,6 @@
         <button class="btn-add" id="btnSalvarEdicao" onclick="salvarEdicao()" style="display:none;background:var(--green);">✓ Salvar</button>
     </div>
 
-    <!-- Lista de itens -->
     <div class="items-section">
         <div class="items-header">
             <h3>Itens registrados</h3>
@@ -666,7 +661,6 @@
 
 <div class="toast" id="toast">✓ Item adicionado</div>
 
-<!-- FOOTER COM AÇÕES E LINKS -->
 <div class="footer-actions">
     <button class="btn btn-ghost" onclick="limparLista()">🗑️ Limpar tudo</button>
     <div class="footer-right">
@@ -724,7 +718,6 @@
 
     // ============================================================
     // PARSER DE CSV QUE RESPEITA ASPAS
-    // (necessário porque CUSTO REP. pode ter vírgula: "10,50")
     // ============================================================
     function parseCSVLine(line, sep) {
         const result = [];
@@ -755,6 +748,29 @@
     }
 
     // ============================================================
+    // FUNÇÃO AUXILIAR: LÊ QUANTIDADE COMO DECIMAL
+    // ============================================================
+    function lerQuantidade() {
+        const raw = (qtdInput.value || '').toString().trim();
+        if (raw === '') return 0;
+        // Aceita tanto "0.326" quanto "0,326"
+        const normalizado = raw.replace(',', '.');
+        const n = parseFloat(normalizado);
+        return isNaN(n) ? 0 : n;
+    }
+
+    // ============================================================
+    // FUNÇÃO AUXILIAR: FORMATA QUANTIDADE PARA EXIBIÇÃO
+    // ============================================================
+    function formatarQtd(n) {
+        if (n === null || n === undefined) return '';
+        const num = Number(n);
+        if (Number.isInteger(num)) return String(num);
+        // Máximo 3 casas decimais, sem zeros à direita
+        return num.toFixed(3).replace(/0+$/, '').replace(/\.$/, '').replace('.', ',');
+    }
+
+    // ============================================================
     // CARREGAR CATÁLOGO DO CSV
     // ============================================================
     async function carregarCatalogo() {
@@ -768,14 +784,12 @@
 
             let csv = await resposta.text();
 
-            // Remove BOM se existir
             if (csv.charCodeAt(0) === 0xFEFF) csv = csv.slice(1);
 
             const linhas = csv.split(/\r?\n/).filter(l => l.trim() !== '');
             if (linhas.length === 0) throw new Error('CSV vazio');
 
             const primeiraLinha = linhas[0];
-            // Detecta separador pela contagem de vírgulas vs ponto e vírgulas
             const sepCount = (primeiraLinha.match(/,/g) || []).length;
             const semiCount = (primeiraLinha.match(/;/g) || []).length;
             const separador = semiCount > sepCount ? ';' : ',';
@@ -792,7 +806,6 @@
                 fator:     cabecalho.findIndex(c => /FATORCX|^FATOR$/.test(c))
             };
 
-            // Fallback posicional (ordem conhecida: CODIGO, CODBARRA, DESCRICAO, UNIDADE, FATORCX, CUSTO REP.)
             if (idx.codigo === -1)    idx.codigo = 0;
             if (idx.codbarra === -1)  idx.codbarra = 1;
             if (idx.descricao === -1) idx.descricao = 2;
@@ -831,14 +844,10 @@
             console.error('❌ Erro ao carregar catálogo:', erro);
             catalogo = catalogoFallback;
             statusTexto.innerHTML = `⚠️ Usando catálogo de fallback: <strong>${catalogo.length}</strong> produtos (erro: ${erro.message})`;
-            console.log(`⚠️ Usando catálogo de fallback: ${catalogo.length} produtos`);
             return catalogo;
         }
     }
 
-    // ============================================================
-    // RECARREGAR CATÁLOGO (botão)
-    // ============================================================
     async function recarregarCatalogo() {
         await carregarCatalogo();
         showToast('🔄 Catálogo recarregado!');
@@ -861,9 +870,6 @@
         return `QBR-${y}${m}${d}-${h}${min}${s}-${rand}`;
     }
 
-    // ============================================================
-    // DATA/HORA AUTOMÁTICA
-    // ============================================================
     function preencherDataHora() {
         const now = new Date();
         const d = String(now.getDate()).padStart(2,'0');
@@ -875,9 +881,6 @@
     }
     preencherDataHora();
 
-    // ============================================================
-    // PREENCHER CAMPOS DO PRODUTO
-    // ============================================================
     function preencherCampos(produto) {
         if (!produto) return;
         codigoInput.value = produto.codbarra;
@@ -885,9 +888,6 @@
         unidadeInput.value = produto.unidade;
     }
 
-    // ============================================================
-    // BUSCA POR CÓDIGO DE BARRAS (exata)
-    // ============================================================
     codigoInput.addEventListener('blur', function() {
         const cod = this.value.trim();
         if (cod === '') {
@@ -962,7 +962,7 @@
     });
 
     // ============================================================
-    // ADICIONAR ITEM
+    // ADICIONAR ITEM (aceita quantidade decimal)
     // ============================================================
     function adicionarItem() {
         const codbarra = codigoInput.value.trim();
@@ -973,9 +973,9 @@
 
         const tipo = tipoSelect.value;
         const motivo = motivoSelect.value;
-        const quantidade = parseInt(qtdInput.value) || 0;
+        const quantidade = lerQuantidade();
 
-        if (quantidade <= 0) { showToast('⚠️ Quantidade deve ser > 0'); return; }
+        if (quantidade <= 0) { showToast('⚠️ Quantidade deve ser maior que 0'); return; }
 
         if (editandoIndex !== null) {
             salvarEdicao();
@@ -997,9 +997,6 @@
         showToast('✓ Item adicionado');
     }
 
-    // ============================================================
-    // LIMPAR CAMPOS DO FORMULÁRIO
-    // ============================================================
     function limparCampos() {
         codigoInput.value = '';
         descInput.value = '';
@@ -1029,7 +1026,7 @@
         unidadeInput.value = item.unidade;
         tipoSelect.value = item.tipo;
         motivoSelect.value = item.motivo;
-        qtdInput.value = item.quantidade;
+        qtdInput.value = formatarQtd(item.quantidade);
 
         btnAdicionar.style.display = 'none';
         btnSalvarEdicao.style.display = 'inline-flex';
@@ -1043,7 +1040,7 @@
     }
 
     // ============================================================
-    // SALVAR EDIÇÃO
+    // SALVAR EDIÇÃO (aceita decimal)
     // ============================================================
     function salvarEdicao() {
         if (editandoIndex === null) return;
@@ -1056,9 +1053,9 @@
 
         const tipo = tipoSelect.value;
         const motivo = motivoSelect.value;
-        const quantidade = parseInt(qtdInput.value) || 0;
+        const quantidade = lerQuantidade();
 
-        if (quantidade <= 0) { showToast('⚠️ Quantidade deve ser > 0'); return; }
+        if (quantidade <= 0) { showToast('⚠️ Quantidade deve ser maior que 0'); return; }
 
         itens[editandoIndex] = {
             sku: produto.sku,
@@ -1075,9 +1072,6 @@
         showToast('✓ Item atualizado');
     }
 
-    // ============================================================
-    // REMOVER ITEM
-    // ============================================================
     function removerItem(index) {
         if (editandoIndex !== null) {
             if (!confirm('Há uma edição em andamento. Deseja cancelar e remover?')) return;
@@ -1089,7 +1083,7 @@
     }
 
     // ============================================================
-    // RENDERIZAR TABELA
+    // RENDERIZAR TABELA (mostra quantidade formatada)
     // ============================================================
     function renderizarTabela() {
         const tbody = document.getElementById('corpoTabela');
@@ -1114,7 +1108,7 @@
                 <td>${index + 1}</td>
                 <td>${escHtml(item.descricao)}</td>
                 <td>${item.tipo}</td>
-                <td class="qtd-cell">${item.quantidade}</td>
+                <td class="qtd-cell">${formatarQtd(item.quantidade)}</td>
                 <td>${item.motivo}</td>
                 <td>${item.unidade}</td>
                 <td style="text-align:center;white-space:nowrap;">
@@ -1126,22 +1120,16 @@
 
         tbody.innerHTML = html;
         totalItensSpan.textContent = itens.length;
-        totalUnidadesSpan.textContent = somaUnidades;
+        totalUnidadesSpan.textContent = formatarQtd(somaUnidades);
         contadorSpan.textContent = `${itens.length} itens`;
     }
 
-    // ============================================================
-    // ESCAPE HTML
-    // ============================================================
     function escHtml(texto) {
         if (!texto) return '';
         const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
         return texto.replace(/[&<>"']/g, m => map[m]);
     }
 
-    // ============================================================
-    // LIMPAR LISTA
-    // ============================================================
     function limparLista() {
         if (itens.length === 0) { showToast('Já está vazio'); return; }
         if (editandoIndex !== null) { limparCampos(); }
@@ -1153,7 +1141,7 @@
     }
 
     // ============================================================
-    // SALVAR NO HISTÓRICO (GOOGLE SHEETS)
+    // SALVAR NO HISTÓRICO
     // ============================================================
     async function salvarNoHistorico() {
         if (itens.length === 0) {
@@ -1239,12 +1227,12 @@
         resumo += '─'.repeat(48) + '\n';
         resumo += `ITENS (${itens.length}):\n`;
         itens.forEach((item, i) => {
-            resumo += `${i+1}. ${item.descricao} | ${item.tipo} | ${item.quantidade} ${item.unidade} | ${item.motivo}\n`;
+            resumo += `${i+1}. ${item.descricao} | ${item.tipo} | ${formatarQtd(item.quantidade)} ${item.unidade} | ${item.motivo}\n`;
         });
         resumo += '─'.repeat(48) + '\n';
         const totalUnidades = itens.reduce((acc, item) => acc + item.quantidade, 0);
         resumo += `Total de itens: ${itens.length}\n`;
-        resumo += `Total de unidades: ${totalUnidades}\n`;
+        resumo += `Total de unidades: ${formatarQtd(totalUnidades)}\n`;
         resumo += '═'.repeat(48) + '\n';
         resumo += 'Assinatura do responsável: ___________________\n';
 
@@ -1257,9 +1245,6 @@
         showToast('✅ Registro finalizado!');
     }
 
-    // ============================================================
-    // TOAST
-    // ============================================================
     function showToast(msg) {
         const t = document.getElementById('toast');
         t.textContent = msg;
@@ -1267,9 +1252,6 @@
         setTimeout(() => t.classList.remove('show'), 2200);
     }
 
-    // ============================================================
-    // ENTER PARA ADICIONAR
-    // ============================================================
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const active = document.activeElement;
@@ -1280,9 +1262,6 @@
         }
     });
 
-    // ============================================================
-    // INICIALIZAR — carrega catálogo e depois renderiza
-    // ============================================================
     (async function init() {
         await carregarCatalogo();
         renderizarTabela();
