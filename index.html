@@ -244,7 +244,6 @@
             margin-left: 6px;
             vertical-align: middle;
         }
-        /* Toggle de SKUs inativos */
         .filter-toggle-row {
             display: flex;
             justify-content: flex-end;
@@ -616,14 +615,12 @@
         </div>
     </div>
 
-    <!-- BARRA DE PESQUISA -->
     <div class="search-bar">
         <span class="search-icon">🔍</span>
         <input type="text" id="pesquisaProduto" placeholder="Buscar produto por descrição (ex: 'abacate')" autocomplete="off">
         <div class="autocomplete-suggestions" id="suggestionsPesquisa"></div>
     </div>
 
-    <!-- TOGGLE SKUs INATIVOS -->
     <div class="filter-toggle-row">
         <button type="button" class="toggle-btn" id="btnToggleInativos" onclick="toggleInativos()">
             <span class="dot"></span>
@@ -631,7 +628,6 @@
         </button>
     </div>
 
-    <!-- FORMULÁRIO DE ADIÇÃO -->
     <div class="add-product" id="formAdicionar">
         <div class="add-field busca">
             <label>Cód. Barras</label>
@@ -676,7 +672,6 @@
         <button class="btn-add" id="btnSalvarEdicao" onclick="salvarEdicao()" style="display:none;background:var(--green);">✓ Salvar</button>
     </div>
 
-    <!-- Lista de itens -->
     <div class="items-section">
         <div class="items-header">
             <h3>Itens registrados</h3>
@@ -802,9 +797,6 @@
         return result;
     }
 
-    // ============================================================
-    // QUANTIDADE: LÊ COMO DECIMAL
-    // ============================================================
     function lerQuantidade() {
         const raw = (qtdInput.value || '').toString().trim();
         if (raw === '') return 0;
@@ -813,9 +805,6 @@
         return isNaN(n) ? 0 : n;
     }
 
-    // ============================================================
-    // QUANTIDADE: FORMATA PARA EXIBIÇÃO
-    // ============================================================
     function formatarQtd(n) {
         if (n === null || n === undefined) return '';
         const num = Number(n);
@@ -823,17 +812,11 @@
         return num.toFixed(3).replace(/0+$/, '').replace(/\.$/, '').replace('.', ',');
     }
 
-    // ============================================================
-    // RETORNA O CATÁLOGO DE ACORDO COM O FILTRO DE ATIVOS
-    // ============================================================
     function getCatalogoFiltrado() {
         if (mostrarInativos) return catalogo;
         return catalogo.filter(p => (p.ativo || 'S').toUpperCase() === 'S');
     }
 
-    // ============================================================
-    // TOGGLE MOSTRAR INATIVOS
-    // ============================================================
     function toggleInativos() {
         mostrarInativos = !mostrarInativos;
         btnToggleInativos.classList.toggle('active', mostrarInativos);
@@ -841,7 +824,6 @@
             ? 'Mostrando TODOS os SKUs (ativos + inativos)'
             : 'Mostrar SKUs inativos';
 
-        // Reaplica a busca atual se houver texto
         const q = pesquisaInput.value.trim();
         if (q !== '') {
             pesquisaInput.dispatchEvent(new Event('input'));
@@ -851,9 +833,6 @@
             : '🔒 Mostrando apenas SKUs ativos');
     }
 
-    // ============================================================
-    // CARREGAR CATÁLOGO DO CSV
-    // ============================================================
     async function carregarCatalogo() {
         try {
             statusTexto.textContent = '🔄 Baixando catálogo da planilha...';
@@ -905,7 +884,6 @@
                 const codbarra = cols[idx.codbarra] || '';
                 if (codbarra === '' || codbarra.toUpperCase() === 'SEM GTIN') continue;
 
-                // ATIVO: aceita "S"/"N" (maiúsculo/minúsculo), padrão "S" se vazio
                 let ativo = 'S';
                 if (idx.ativo !== -1) {
                     const rawAtivo = (cols[idx.ativo] || '').toUpperCase();
@@ -931,7 +909,6 @@
 
             statusTexto.innerHTML = `✅ Catálogo carregado: <strong>${catalogo.length}</strong> produtos (${totalAtivos} ativos, ${totalInativos} inativos)`;
             console.log(`✅ Catálogo carregado: ${catalogo.length} produtos (${totalAtivos} ativos, ${totalInativos} inativos)`);
-            console.log('Exemplo (primeiros 3):', catalogo.slice(0, 3));
             return catalogo;
 
         } catch (erro) {
@@ -949,9 +926,6 @@
         if (query) pesquisaInput.dispatchEvent(new Event('input'));
     }
 
-    // ============================================================
-    // GERAR ID ÚNICO PARA A QUEBRA
-    // ============================================================
     function gerarIdQuebra() {
         const now = new Date();
         const y = now.getFullYear().toString().slice(-2);
@@ -982,27 +956,17 @@
         unidadeInput.value = produto.unidade;
     }
 
-    // ============================================================
-    // MUDANÇA NO TIPO: "Desconto" preenche automaticamente
-    // ============================================================
     tipoSelect.addEventListener('change', function() {
         if (this.value === 'Desconto') {
-            // Preenche os campos como "Desconto"
             codigoInput.value = 'Desconto';
             codigoInput.setAttribute('readonly', 'readonly');
             codigoInput.style.background = '#f5f4f1';
-
             descInput.value = 'Desconto';
-
             unidadeInput.value = 'KG';
-
-            // Foca no campo de quantidade e seleciona tudo
             qtdInput.value = '';
             qtdInput.focus();
-
             showToast('💸 Modo Desconto: digite o valor em KG');
         } else {
-            // Ao sair do modo Desconto, limpa os campos se ainda estiverem preenchidos com "Desconto"
             if (codigoInput.value === 'Desconto') {
                 codigoInput.value = '';
                 descInput.value = '';
@@ -1013,21 +977,14 @@
         }
     });
 
-    // ============================================================
-    // BUSCA POR CÓDIGO DE BARRAS (exata)
-    // ============================================================
     codigoInput.addEventListener('blur', function() {
         const cod = this.value.trim();
-
-        // Se está no modo Desconto, não procura nada
         if (tipoSelect.value === 'Desconto') return;
-
         if (cod === '') {
             descInput.value = '';
             unidadeInput.value = '';
             return;
         }
-
         const lista = getCatalogoFiltrado();
         const produto = lista.find(p => p.codbarra === cod);
         if (produto) {
@@ -1039,7 +996,6 @@
             }
             if (editandoIndex === null) qtdInput.focus();
         } else {
-            // Se não encontrou entre os filtrados, tenta ver se existe como inativo
             const produtoTotal = catalogo.find(p => p.codbarra === cod);
             if (produtoTotal && produtoTotal.ativo === 'N' && !mostrarInativos) {
                 showToast('⚠️ Produto INATIVO. Ative "Mostrar inativos"');
@@ -1055,9 +1011,6 @@
         if (e.key === 'Enter') this.blur();
     });
 
-    // ============================================================
-    // AUTOCOMPLETE POR DESCRIÇÃO
-    // ============================================================
     function matchesQuery(produto, query) {
         const words = query.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
         const text = produto.descricao.toLowerCase();
@@ -1095,7 +1048,6 @@
         const item = e.target.closest('.suggestion');
         if (!item) return;
 
-        // Se estava no modo Desconto e o usuário clicou numa sugestão, sai do modo
         if (tipoSelect.value === 'Desconto') {
             tipoSelect.value = 'Quebra';
             codigoInput.removeAttribute('readonly');
@@ -1123,9 +1075,6 @@
         }
     });
 
-    // ============================================================
-    // ADICIONAR ITEM (aceita decimal + Desconto)
-    // ============================================================
     function adicionarItem() {
         const tipo = tipoSelect.value;
         const motivo = motivoSelect.value;
@@ -1138,7 +1087,6 @@
             return;
         }
 
-        // ---------- Desconto: item especial ----------
         if (tipo === 'Desconto') {
             itens.push({
                 sku: 'Desconto',
@@ -1155,14 +1103,12 @@
             return;
         }
 
-        // ---------- Produto normal ----------
         const codbarra = codigoInput.value.trim();
         if (!codbarra) { showToast('⚠️ Selecione um produto'); return; }
 
         const lista = getCatalogoFiltrado();
         let produto = lista.find(p => p.codbarra === codbarra);
 
-        // Se não achou entre ativos, tenta achar em toda a base
         if (!produto) {
             const naBase = catalogo.find(p => p.codbarra === codbarra);
             if (naBase && naBase.ativo === 'N' && !mostrarInativos) {
@@ -1189,7 +1135,6 @@
     }
 
     function limparCampos() {
-        // Sai do modo Desconto
         if (tipoSelect.value === 'Desconto') {
             codigoInput.removeAttribute('readonly');
             codigoInput.style.background = '';
@@ -1209,9 +1154,6 @@
         });
     }
 
-    // ============================================================
-    // INICIAR EDIÇÃO
-    // ============================================================
     function iniciarEdicao(index) {
         const item = itens[index];
         if (!item) return;
@@ -1246,9 +1188,6 @@
         showToast('✏️ Editando item...');
     }
 
-    // ============================================================
-    // SALVAR EDIÇÃO
-    // ============================================================
     function salvarEdicao() {
         if (editandoIndex === null) return;
 
@@ -1258,7 +1197,6 @@
 
         if (quantidade <= 0) { showToast('⚠️ Quantidade deve ser maior que 0'); return; }
 
-        // ---------- Desconto ----------
         if (tipo === 'Desconto') {
             itens[editandoIndex] = {
                 sku: 'Desconto',
@@ -1275,7 +1213,6 @@
             return;
         }
 
-        // ---------- Produto normal ----------
         const codbarra = codigoInput.value.trim();
         if (!codbarra) { showToast('⚠️ Selecione um produto'); return; }
 
@@ -1316,9 +1253,6 @@
         showToast('Item removido');
     }
 
-    // ============================================================
-    // RENDERIZAR TABELA
-    // ============================================================
     function renderizarTabela() {
         const tbody = document.getElementById('corpoTabela');
         const totalItensSpan = document.getElementById('totalItens');
@@ -1375,7 +1309,7 @@
     }
 
     // ============================================================
-    // SALVAR NO HISTÓRICO
+    // SALVAR NO HISTÓRICO — ENVIA EM LOTES (evita erro 400)
     // ============================================================
     async function salvarNoHistorico() {
         if (itens.length === 0) {
@@ -1383,42 +1317,81 @@
             return false;
         }
 
-        const idQuebra = gerarIdQuebra();
+        const TAMANHO_LOTE = 30;
+        const idBase = gerarIdQuebra();
         const dataHora = document.getElementById('dataHora').value.trim();
         const partes = dataHora.split(' ');
         const data = partes[0] || '';
         const hora = partes[1] || '';
 
-        const dados = {
-            id: idQuebra,
-            data: data,
-            hora: hora,
-            loja: document.getElementById('loja').value,
-            operador: document.getElementById('operador').value.trim() || 'Não informado',
-            observacao: document.getElementById('observacao').value.trim(),
-            itens: itens.map(item => ({
-                descricao: item.descricao,
-                codbarra: item.codbarra,
-                quantidade: Number(item.quantidade),
-                unidade: item.unidade,
-                tipo: item.tipo,
-                motivo: item.motivo
-            }))
-        };
+        const loja = document.getElementById('loja').value;
+        const operador = document.getElementById('operador').value.trim() || 'Não informado';
+        const observacaoBase = document.getElementById('observacao').value.trim();
+
+        const total = itens.length;
+        const totalLotes = Math.ceil(total / TAMANHO_LOTE);
+
+        let todosOk = true;
 
         try {
-            console.log('📤 Enviando para:', URL_SCRIPT);
-            console.log('📦 Dados enviados:', dados);
+            for (let lote = 0; lote < totalLotes; lote++) {
+                const inicio = lote * TAMANHO_LOTE;
+                const fim = Math.min(inicio + TAMANHO_LOTE, total);
+                const itensLote = itens.slice(inicio, fim);
 
-            const urlComDados = URL_SCRIPT + '?dados=' + encodeURIComponent(JSON.stringify(dados));
+                // Sufixo no ID: -01, -02, ... quando houver mais de 1 lote
+                const sufixo = totalLotes > 1 ? '-' + String(lote + 1).padStart(2, '0') : '';
+                const idLote = idBase + sufixo;
 
-            await fetch(urlComDados, {
-                method: 'GET',
-                mode: 'no-cors'
-            });
+                // Sufixo na observação
+                const obs = totalLotes > 1
+                    ? (observacaoBase ? observacaoBase + ' ' : '') + `(lote ${lote + 1}/${totalLotes})`
+                    : observacaoBase;
 
-            showToast('✅ Histórico enviado! Confira a planilha.');
+                const dados = {
+                    id: idLote,
+                    data: data,
+                    hora: hora,
+                    loja: loja,
+                    operador: operador,
+                    observacao: obs,
+                    itens: itensLote.map(item => ({
+                        descricao: item.descricao,
+                        codbarra: item.codbarra,
+                        quantidade: Number(item.quantidade),
+                        unidade: item.unidade,
+                        tipo: item.tipo,
+                        motivo: item.motivo
+                    }))
+                };
+
+                const urlComDados = URL_SCRIPT + '?dados=' + encodeURIComponent(JSON.stringify(dados));
+                console.log(`📤 Lote ${lote + 1}/${totalLotes} (${itensLote.length} itens) — URL: ${urlComDados.length} caracteres`);
+
+                // Aviso se a URL ficar grande demais
+                if (urlComDados.length > 7500) {
+                    console.warn(`⚠️ URL do lote ${lote + 1} está com ${urlComDados.length} caracteres. Considere reduzir TAMANHO_LOTE.`);
+                    todosOk = false;
+                }
+
+                await fetch(urlComDados, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+
+                // Pequeno intervalo entre lotes
+                if (lote < totalLotes - 1) {
+                    await new Promise(r => setTimeout(r, 800));
+                }
+            }
+
+            if (totalLotes > 1) {
+                showToast(`✅ Histórico enviado em ${totalLotes} lotes!`);
+            } else {
+                showToast('✅ Histórico enviado! Confira a planilha.');
+            }
             return true;
+
         } catch (erro) {
             console.error('❌ Erro ao salvar histórico:', erro);
             showToast(`⚠️ Erro ao salvar: ${erro.message}`);
