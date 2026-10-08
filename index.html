@@ -330,33 +330,6 @@
         .add-field.tipo { flex: 1.1; }
         .add-field.motivo { flex: 1.2; }
         .add-field.qtd { flex: 0.7; }
-        .add-field.fator { flex: 0.9; }
-        .add-field.unidade { flex: 0.5; }
-        .add-field.total { flex: 0.7; }
-
-        /* NOVO: checkbox dentro do campo fator */
-        .fator-check {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 10px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-            cursor: pointer;
-            text-transform: none;
-            letter-spacing: 0;
-            font-weight: 400;
-            white-space: nowrap;
-            user-select: none;
-        }
-        .fator-check input[type="checkbox"] {
-            width: 13px;
-            height: 13px;
-            accent-color: var(--accent);
-            cursor: pointer;
-            margin: 0;
-        }
-
         .btn-add {
             padding: 8px 20px;
             background: var(--accent);
@@ -655,7 +628,6 @@
         </button>
     </div>
 
-    <!-- FORMULÁRIO DE ADIÇÃO (agora com Fator + checkbox + Total) -->
     <div class="add-product" id="formAdicionar">
         <div class="add-field busca">
             <label>Cód. Barras</label>
@@ -692,21 +664,9 @@
             <label>Qtd</label>
             <input type="number" id="qtdProd" value="1" min="0.001" step="0.001" />
         </div>
-        <div class="add-field fator">
-            <label>Fator</label>
-            <input type="number" id="fatorProd" value="1" min="0.001" step="0.001" />
-            <label class="fator-check">
-                <input type="checkbox" id="usarFatorCatalogo" />
-                Usar fator do catálogo
-            </label>
-        </div>
-        <div class="add-field unidade">
+        <div class="add-field" style="flex: 0.5;">
             <label>Un.</label>
             <input type="text" id="unidadeProd" readonly style="background:#f5f4f1;width:60px;" />
-        </div>
-        <div class="add-field total">
-            <label>Total</label>
-            <input type="text" id="totalProd" readonly style="background:#f5f4f1;color:var(--accent);font-weight:600;" />
         </div>
         <button class="btn-add" id="btnAdicionar" onclick="adicionarItem()">Adicionar →</button>
         <button class="btn-add" id="btnSalvarEdicao" onclick="salvarEdicao()" style="display:none;background:var(--green);">✓ Salvar</button>
@@ -720,23 +680,21 @@
         <table class="items-table" id="tabelaItens">
             <thead>
                 <tr>
-                    <th style="width:4%;">#</th>
-                    <th style="width:22%;">Produto</th>
-                    <th style="width:14%;">Tipo</th>
-                    <th style="width:8%;">Qtd</th>
-                    <th style="width:7%;">Fator</th>
-                    <th style="width:8%;">Total</th>
-                    <th style="width:14%;">Motivo</th>
-                    <th style="width:6%;">Un.</th>
+                    <th style="width:5%;">#</th>
+                    <th style="width:25%;">Produto</th>
+                    <th style="width:18%;">Tipo</th>
+                    <th style="width:10%;">Qtd</th>
+                    <th style="width:18%;">Motivo</th>
+                    <th style="width:8%;">Un.</th>
                     <th style="width:8%;text-align:center">Ações</th>
                 </tr>
             </thead>
             <tbody id="corpoTabela">
-                <tr><td colspan="9" class="empty-message">Nenhum item registrado ainda.</td></tr>
+                <tr><td colspan="7" class="empty-message">Nenhum item registrado ainda.</td></tr>
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="8" style="padding:0;">
+                    <td colspan="6" style="padding:0;">
                         <div class="totals-bar">
                             <span>Itens: <span class="value" id="totalItens">0</span></span>
                             <span>Total unidades: <span class="value highlight" id="totalUnidades">0</span></span>
@@ -799,10 +757,7 @@
     const tipoSelect = document.getElementById('tipoProd');
     const motivoSelect = document.getElementById('motivoProd');
     const qtdInput = document.getElementById('qtdProd');
-    const fatorInput = document.getElementById('fatorProd');
-    const usarFatorCheck = document.getElementById('usarFatorCatalogo');
     const unidadeInput = document.getElementById('unidadeProd');
-    const totalProd = document.getElementById('totalProd');
     const pesquisaInput = document.getElementById('pesquisaProduto');
     const suggestionsDiv = document.getElementById('suggestionsPesquisa');
     const btnAdicionar = document.getElementById('btnAdicionar');
@@ -824,11 +779,18 @@
                 if (c === '"') {
                     if (line[i + 1] === '"') { cur += '"'; i++; }
                     else { inQuotes = false; }
-                } else { cur += c; }
+                } else {
+                    cur += c;
+                }
             } else {
-                if (c === '"') { inQuotes = true; }
-                else if (c === sep) { result.push(cur); cur = ''; }
-                else { cur += c; }
+                if (c === '"') {
+                    inQuotes = true;
+                } else if (c === sep) {
+                    result.push(cur);
+                    cur = '';
+                } else {
+                    cur += c;
+                }
             }
         }
         result.push(cur);
@@ -841,12 +803,6 @@
         const normalizado = raw.replace(',', '.');
         const n = parseFloat(normalizado);
         return isNaN(n) ? 0 : n;
-    }
-
-    function lerFator() {
-        const raw = (fatorInput.value || '1').toString().trim();
-        const n = parseFloat(raw.replace(',', '.'));
-        return isNaN(n) || n <= 0 ? 1 : n;
     }
 
     function formatarQtd(n) {
@@ -877,9 +833,6 @@
             : '🔒 Mostrando apenas SKUs ativos');
     }
 
-    // ============================================================
-    // CARREGAR CATÁLOGO
-    // ============================================================
     async function carregarCatalogo() {
         try {
             statusTexto.textContent = '🔄 Baixando catálogo da planilha...';
@@ -996,57 +949,11 @@
     }
     preencherDataHora();
 
-    // ============================================================
-    // ATUALIZAR TOTAL (Qtd, Fator)
-    //   - Checkbox DESMARCADO → Total = Qtd (não multiplica)
-    //   - Checkbox MARCADO → Total = Qtd × Fator
-    // ============================================================
-    function atualizarTotalProd() {
-        const qtd = lerQuantidade();
-        if (qtd <= 0) {
-            totalProd.value = '';
-            return;
-        }
-        if (usarFatorCheck.checked) {
-            const fator = lerFator();
-            totalProd.value = formatarQtd(qtd * fator);
-        } else {
-            totalProd.value = formatarQtd(qtd);
-        }
-    }
-
-    qtdInput.addEventListener('input', atualizarTotalProd);
-    fatorInput.addEventListener('input', atualizarTotalProd);
-
-    // Evento do checkbox "Usar fator do catálogo"
-    usarFatorCheck.addEventListener('change', function() {
-        if (this.checked) {
-            // Ao marcar, preenche o fator do catálogo se houver produto selecionado
-            const cod = codigoInput.value.trim();
-            if (cod && cod !== 'Desconto') {
-                const produto = catalogo.find(p => p.codbarra === cod);
-                if (produto) fatorInput.value = produto.fator || 1;
-            }
-            showToast('🔢 Fator do catálogo ativado (Total = Qtd × Fator)');
-        } else {
-            // Ao desmarcar, volta o fator para 1 (não multiplica)
-            fatorInput.value = '1';
-            showToast('🔢 Fator desativado (Total = Qtd)');
-        }
-        atualizarTotalProd();
-    });
-
     function preencherCampos(produto) {
         if (!produto) return;
         codigoInput.value = produto.codbarra;
         descInput.value = produto.descricao;
         unidadeInput.value = produto.unidade;
-        if (usarFatorCheck.checked) {
-            fatorInput.value = produto.fator || 1;
-        } else {
-            fatorInput.value = '1';
-        }
-        atualizarTotalProd();
     }
 
     tipoSelect.addEventListener('change', function() {
@@ -1057,7 +964,6 @@
             descInput.value = 'Desconto';
             unidadeInput.value = 'KG';
             qtdInput.value = '';
-            atualizarTotalProd();
             qtdInput.focus();
             showToast('💸 Modo Desconto: digite o valor em KG');
         } else {
@@ -1111,9 +1017,6 @@
         return words.every(word => text.includes(word));
     }
 
-    // ============================================================
-    // PESQUISA — NÃO OCULTA OS ITENS DA TABELA
-    // ============================================================
     pesquisaInput.addEventListener('input', function() {
         const query = this.value.trim();
         if (query === '') {
@@ -1130,7 +1033,6 @@
                              data-codbarra="${p.codbarra}"
                              data-desc="${p.descricao}"
                              data-unidade="${p.unidade}"
-                             data-fator="${p.fator}"
                              data-ativo="${p.ativo}">
                     <strong>${p.codbarra}</strong> — ${p.descricao} <em>(${p.unidade})</em>
                     ${inativo ? '<span class="badge-inativo">INATIVO</span>' : ''}
@@ -1140,7 +1042,6 @@
         } else {
             suggestionsDiv.classList.remove('show');
         }
-        // ⚠️ NÃO chamamos filtrarLista() nem ocultamos os itens
     });
 
     suggestionsDiv.addEventListener('click', function(e) {
@@ -1156,12 +1057,6 @@
         codigoInput.value = item.dataset.codbarra;
         descInput.value = item.dataset.desc;
         unidadeInput.value = item.dataset.unidade;
-
-        if (usarFatorCheck.checked && item.dataset.fator) {
-            fatorInput.value = item.dataset.fator;
-        }
-
-        atualizarTotalProd();
 
         if (item.dataset.ativo === 'N') {
             showToast('⚠️ Produto INATIVO selecionado');
@@ -1192,10 +1087,6 @@
             return;
         }
 
-        // Fator: só aplica quando o checkbox está marcado
-        const fator = usarFatorCheck.checked ? lerFator() : 1;
-        const total = quantidade * fator;
-
         if (tipo === 'Desconto') {
             itens.push({
                 sku: 'Desconto',
@@ -1204,9 +1095,7 @@
                 unidade: 'KG',
                 tipo: tipo,
                 motivo: motivo,
-                quantidade: quantidade,
-                fator: 1,
-                total: quantidade
+                quantidade: quantidade
             });
             limparCampos();
             renderizarTabela();
@@ -1237,9 +1126,7 @@
             unidade: produto.unidade,
             tipo: tipo,
             motivo: motivo,
-            quantidade: quantidade,
-            fator: fator,
-            total: total
+            quantidade: quantidade
         });
 
         limparCampos();
@@ -1256,8 +1143,6 @@
         descInput.value = '';
         unidadeInput.value = '';
         qtdInput.value = '1';
-        fatorInput.value = '1';
-        totalProd.value = '';
         tipoSelect.value = 'Quebra';
         motivoSelect.value = 'Validade';
         codigoInput.focus();
@@ -1267,7 +1152,6 @@
         document.querySelectorAll('.add-field input, .add-field select').forEach(el => {
             el.classList.remove('edit-mode');
         });
-        atualizarTotalProd();
     }
 
     function iniciarEdicao(index) {
@@ -1278,16 +1162,6 @@
         tipoSelect.value = item.tipo;
         motivoSelect.value = item.motivo;
         qtdInput.value = formatarQtd(item.quantidade);
-
-        // Configura o checkbox e o fator de acordo com o item
-        if (item.fator && item.fator !== 1) {
-            usarFatorCheck.checked = true;
-            fatorInput.value = formatarQtd(item.fator);
-        } else {
-            usarFatorCheck.checked = false;
-            fatorInput.value = '1';
-        }
-        atualizarTotalProd();
 
         if (item.tipo === 'Desconto') {
             codigoInput.value = 'Desconto';
@@ -1323,9 +1197,6 @@
 
         if (quantidade <= 0) { showToast('⚠️ Quantidade deve ser maior que 0'); return; }
 
-        const fator = usarFatorCheck.checked ? lerFator() : 1;
-        const total = quantidade * fator;
-
         if (tipo === 'Desconto') {
             itens[editandoIndex] = {
                 sku: 'Desconto',
@@ -1334,9 +1205,7 @@
                 unidade: 'KG',
                 tipo: tipo,
                 motivo: motivo,
-                quantidade: quantidade,
-                fator: 1,
-                total: quantidade
+                quantidade: quantidade
             };
             limparCampos();
             renderizarTabela();
@@ -1366,9 +1235,7 @@
             unidade: produto.unidade,
             tipo: tipo,
             motivo: motivo,
-            quantidade: quantidade,
-            fator: fator,
-            total: total
+            quantidade: quantidade
         };
 
         limparCampos();
@@ -1393,7 +1260,7 @@
         const contadorSpan = document.getElementById('contadorItens');
 
         if (itens.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9" class="empty-message">Nenhum item registrado ainda.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-message">Nenhum item registrado ainda.</td></tr>`;
             totalItensSpan.textContent = '0';
             totalUnidadesSpan.textContent = '0';
             contadorSpan.textContent = '0 itens';
@@ -1401,19 +1268,15 @@
         }
 
         let html = '';
-        let somaTotais = 0;
+        let somaUnidades = 0;
         itens.forEach((item, index) => {
-            const totalItem = (item.total !== undefined) ? item.total : item.quantidade;
-            somaTotais += totalItem;
+            somaUnidades += item.quantidade;
             const isEditando = (editandoIndex === index);
-            const fatorExibir = (item.fator && item.fator !== 1) ? formatarQtd(item.fator) : '—';
             html += `<tr style="${isEditando ? 'background:var(--accent-light);' : ''}">
                 <td>${index + 1}</td>
                 <td>${escHtml(item.descricao)}</td>
                 <td>${item.tipo}</td>
                 <td class="qtd-cell">${formatarQtd(item.quantidade)}</td>
-                <td class="qtd-cell">${fatorExibir}</td>
-                <td class="qtd-cell" style="color:var(--accent);font-weight:600;">${formatarQtd(totalItem)}</td>
                 <td>${item.motivo}</td>
                 <td>${item.unidade}</td>
                 <td style="text-align:center;white-space:nowrap;">
@@ -1425,7 +1288,7 @@
 
         tbody.innerHTML = html;
         totalItensSpan.textContent = itens.length;
-        totalUnidadesSpan.textContent = formatarQtd(somaTotais);
+        totalUnidadesSpan.textContent = formatarQtd(somaUnidades);
         contadorSpan.textContent = `${itens.length} itens`;
     }
 
@@ -1446,7 +1309,7 @@
     }
 
     // ============================================================
-    // SALVAR NO HISTÓRICO — ENVIA EM LOTES
+    // SALVAR NO HISTÓRICO — ENVIA EM LOTES (evita erro 400)
     // ============================================================
     async function salvarNoHistorico() {
         if (itens.length === 0) {
@@ -1476,9 +1339,11 @@
                 const fim = Math.min(inicio + TAMANHO_LOTE, total);
                 const itensLote = itens.slice(inicio, fim);
 
+                // Sufixo no ID: -01, -02, ... quando houver mais de 1 lote
                 const sufixo = totalLotes > 1 ? '-' + String(lote + 1).padStart(2, '0') : '';
                 const idLote = idBase + sufixo;
 
+                // Sufixo na observação
                 const obs = totalLotes > 1
                     ? (observacaoBase ? observacaoBase + ' ' : '') + `(lote ${lote + 1}/${totalLotes})`
                     : observacaoBase;
@@ -1496,15 +1361,14 @@
                         quantidade: Number(item.quantidade),
                         unidade: item.unidade,
                         tipo: item.tipo,
-                        motivo: item.motivo,
-                        fator: Number(item.fator || 1),
-                        total: Number(item.total !== undefined ? item.total : item.quantidade)
+                        motivo: item.motivo
                     }))
                 };
 
                 const urlComDados = URL_SCRIPT + '?dados=' + encodeURIComponent(JSON.stringify(dados));
                 console.log(`📤 Lote ${lote + 1}/${totalLotes} (${itensLote.length} itens) — URL: ${urlComDados.length} caracteres`);
 
+                // Aviso se a URL ficar grande demais
                 if (urlComDados.length > 7500) {
                     console.warn(`⚠️ URL do lote ${lote + 1} está com ${urlComDados.length} caracteres. Considere reduzir TAMANHO_LOTE.`);
                     todosOk = false;
@@ -1515,6 +1379,7 @@
                     mode: 'no-cors'
                 });
 
+                // Pequeno intervalo entre lotes
                 if (lote < totalLotes - 1) {
                     await new Promise(r => setTimeout(r, 800));
                 }
@@ -1569,14 +1434,12 @@
         resumo += '─'.repeat(48) + '\n';
         resumo += `ITENS (${itens.length}):\n`;
         itens.forEach((item, i) => {
-            const totalItem = (item.total !== undefined) ? item.total : item.quantidade;
-            const fatorTxt = (item.fator && item.fator !== 1) ? ` × ${formatarQtd(item.fator)}` : '';
-            resumo += `${i+1}. ${item.descricao} | ${item.tipo} | ${formatarQtd(item.quantidade)} ${item.unidade}${fatorTxt} = ${formatarQtd(totalItem)} | ${item.motivo}\n`;
+            resumo += `${i+1}. ${item.descricao} | ${item.tipo} | ${formatarQtd(item.quantidade)} ${item.unidade} | ${item.motivo}\n`;
         });
         resumo += '─'.repeat(48) + '\n';
-        const totalGeral = itens.reduce((acc, item) => acc + ((item.total !== undefined) ? item.total : item.quantidade), 0);
+        const totalUnidades = itens.reduce((acc, item) => acc + item.quantidade, 0);
         resumo += `Total de itens: ${itens.length}\n`;
-        resumo += `Total de unidades: ${formatarQtd(totalGeral)}\n`;
+        resumo += `Total de unidades: ${formatarQtd(totalUnidades)}\n`;
         resumo += '═'.repeat(48) + '\n';
         resumo += 'Assinatura do responsável: ___________________\n';
 
@@ -1599,7 +1462,7 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const active = document.activeElement;
-            if (active && (active.id === 'qtdProd' || active.id === 'codigoProd' || active.id === 'descProd' || active.id === 'fatorProd')) {
+            if (active && (active.id === 'qtdProd' || active.id === 'codigoProd' || active.id === 'descProd')) {
                 e.preventDefault();
                 adicionarItem();
             }
@@ -1609,7 +1472,6 @@
     (async function init() {
         await carregarCatalogo();
         renderizarTabela();
-        atualizarTotalProd();
         console.log(`✅ App iniciado com ${catalogo.length} produtos (${getCatalogoFiltrado().length} visíveis)`);
     })();
 </script>
