@@ -68,23 +68,6 @@
             font-size: 14px;
             font-weight: 700;
         }
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
-        .nav-link {
-            padding: 6px 14px;
-            border-radius: var(--radius-sm);
-            font-size: 13.5px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.15s;
-            text-decoration: none;
-        }
-        .nav-link:hover { background: var(--bg); color: var(--text-primary); }
-        .nav-link.active { color: var(--accent); background: var(--accent-light); }
         .nav-avatar {
             width: 32px;
             height: 32px;
@@ -111,8 +94,6 @@
             color: var(--text-muted);
             margin-bottom: 24px;
         }
-        .breadcrumb span { cursor: pointer; transition: color 0.15s; }
-        .breadcrumb span:hover { color: var(--accent); }
         .breadcrumb .sep { color: var(--border-strong); }
         .breadcrumb .current { color: var(--text-secondary); font-weight: 500; }
         .page-header { margin-bottom: 28px; }
@@ -386,7 +367,7 @@
         }
         .items-table th {
             text-align: left;
-            padding: 10px 12px;
+            padding: 10px 10px;
             background: var(--surface-alt);
             border-bottom: 1px solid var(--border);
             font-weight: 600;
@@ -396,12 +377,14 @@
             letter-spacing: 0.4px;
         }
         .items-table td {
-            padding: 10px 12px;
+            padding: 10px 10px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
         }
         .items-table tr:last-child td { border-bottom: none; }
         .items-table .qtd-cell { text-align: center; font-weight: 500; }
+        .items-table .custo-cell { text-align: right; font-weight: 500; color: var(--text-secondary); }
+        .items-table .custo-total-cell { text-align: right; font-weight: 600; color: var(--red); }
         .btn-remove {
             background: none;
             border: none;
@@ -426,10 +409,12 @@
             background: var(--surface-alt);
             border-top: 1px solid var(--border);
             font-size: 13.5px;
+            flex-wrap: wrap;
         }
         .totals-bar span { font-weight: 500; }
         .totals-bar .value { font-weight: 600; color: var(--text-primary); }
         .totals-bar .highlight { color: var(--accent); }
+        .totals-bar .custo-total { color: var(--red); font-weight: 700; }
         .footer-actions {
             position: fixed;
             bottom: 0;
@@ -568,12 +553,6 @@
 <body>
 <nav>
     <div class="nav-logo"><div class="nav-logo-icon">🍇</div>Frutas & Cia</div>
-    <div class="nav-links">
-        <a class="nav-link" href="#">Dashboard</a>
-        <a class="nav-link active" href="#">Quebras</a>
-        <a class="nav-link" href="#">Histórico</a>
-        <a class="nav-link" href="#">Relatórios</a>
-    </div>
     <div class="nav-avatar">HG</div>
 </nav>
 <div class="page">
@@ -662,7 +641,7 @@
         </div>
         <div class="add-field qtd">
             <label>Qtd</label>
-            <input type="number" id="qtdProd" value="1" min="0.001" step="0.001" />
+            <input type="number" id="qtdProd" value="" min="0.001" step="0.001" placeholder="0" />
         </div>
         <div class="add-field" style="flex: 0.5;">
             <label>Un.</label>
@@ -680,24 +659,27 @@
         <table class="items-table" id="tabelaItens">
             <thead>
                 <tr>
-                    <th style="width:5%;">#</th>
-                    <th style="width:25%;">Produto</th>
-                    <th style="width:18%;">Tipo</th>
-                    <th style="width:10%;">Qtd</th>
-                    <th style="width:18%;">Motivo</th>
-                    <th style="width:8%;">Un.</th>
+                    <th style="width:4%;">#</th>
+                    <th style="width:20%;">Produto</th>
+                    <th style="width:14%;">Tipo</th>
+                    <th style="width:7%;">Qtd</th>
+                    <th style="width:6%;">Un.</th>
+                    <th style="width:15%;">Motivo</th>
+                    <th style="width:9%;">Custo Un.</th>
+                    <th style="width:10%;">Custo Tot.</th>
                     <th style="width:8%;text-align:center">Ações</th>
                 </tr>
             </thead>
             <tbody id="corpoTabela">
-                <tr><td colspan="7" class="empty-message">Nenhum item registrado ainda.</td></tr>
+                <tr><td colspan="9" class="empty-message">Nenhum item registrado ainda.</td></tr>
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="6" style="padding:0;">
+                    <td colspan="9" style="padding:0;">
                         <div class="totals-bar">
                             <span>Itens: <span class="value" id="totalItens">0</span></span>
                             <span>Total unidades: <span class="value highlight" id="totalUnidades">0</span></span>
+                            <span>Prejuízo total: <span class="value custo-total" id="totalCusto">R$ 0,00</span></span>
                         </div>
                     </td>
                 </tr>
@@ -733,12 +715,12 @@
     // CATÁLOGO DE FALLBACK
     // ============================================================
     const catalogoFallback = [
-        { sku: '1', codbarra: '1', descricao: 'ABACATE KG', unidade: 'KG', fator: 18, ativo: 'S' },
-        { sku: '2', codbarra: '2', descricao: 'ABACATE BREDA KG', unidade: 'UN', fator: 1, ativo: 'S' },
-        { sku: '3', codbarra: '3', descricao: 'ABACATE FORTUNE KG', unidade: 'UN', fator: 18, ativo: 'S' },
-        { sku: '4', codbarra: '4', descricao: 'ABACAXI HAWAI UN', unidade: 'UN', fator: 1, ativo: 'S' },
-        { sku: '5', codbarra: '5', descricao: 'ABACAXI PEROLA UN', unidade: 'UN', fator: 5, ativo: 'S' },
-        { sku: '6', codbarra: '6', descricao: 'ABACAXI PICADO POT150G', unidade: 'UN', fator: 1, ativo: 'S' }
+        { sku: '1', codbarra: '1', descricao: 'ABACATE KG', unidade: 'KG', fator: 18, custoRep: 5.90, ativo: 'S' },
+        { sku: '2', codbarra: '2', descricao: 'ABACATE BREDA KG', unidade: 'UN', fator: 1, custoRep: 0.10, ativo: 'S' },
+        { sku: '3', codbarra: '3', descricao: 'ABACATE FORTUNE KG', unidade: 'UN', fator: 18, custoRep: 0.10, ativo: 'S' },
+        { sku: '4', codbarra: '4', descricao: 'ABACAXI HAWAI UN', unidade: 'UN', fator: 1, custoRep: 0.10, ativo: 'S' },
+        { sku: '5', codbarra: '5', descricao: 'ABACAXI PEROLA UN', unidade: 'UN', fator: 5, custoRep: 0.10, ativo: 'S' },
+        { sku: '6', codbarra: '6', descricao: 'ABACAXI PICADO POT150G', unidade: 'UN', fator: 1, custoRep: 0.10, ativo: 'S' }
     ];
 
     // ============================================================
@@ -767,7 +749,7 @@
     const txtToggleInativos = document.getElementById('txtToggleInativos');
 
     // ============================================================
-    // PARSER DE CSV QUE RESPEITA ASPAS
+    // PARSER DE CSV
     // ============================================================
     function parseCSVLine(line, sep) {
         const result = [];
@@ -812,6 +794,31 @@
         return num.toFixed(3).replace(/0+$/, '').replace(/\.$/, '').replace('.', ',');
     }
 
+    // ============================================================
+    // CONVERTE "0,1" / "1.5" / "R$ 0,10" PARA NÚMERO
+    // ============================================================
+    function parseCusto(raw) {
+        if (raw === null || raw === undefined) return 0;
+        let s = String(raw).trim();
+        if (s === '') return 0;
+        // Remove "R$", espaços, pontos de milhar
+        s = s.replace(/R\$\s?/gi, '').replace(/\s/g, '');
+        // Se tem vírgula, assume formato brasileiro: 1.234,56 -> 1234.56
+        if (s.includes(',')) {
+            s = s.replace(/\./g, '').replace(',', '.');
+        }
+        const n = parseFloat(s);
+        return isNaN(n) ? 0 : n;
+    }
+
+    // ============================================================
+    // FORMATA NÚMERO COMO R$
+    // ============================================================
+    function formatarMoeda(n) {
+        const num = Number(n) || 0;
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
     function getCatalogoFiltrado() {
         if (mostrarInativos) return catalogo;
         return catalogo.filter(p => (p.ativo || 'S').toUpperCase() === 'S');
@@ -833,11 +840,13 @@
             : '🔒 Mostrando apenas SKUs ativos');
     }
 
+    // ============================================================
+    // CARREGAR CATÁLOGO
+    // ============================================================
     async function carregarCatalogo() {
         try {
             statusTexto.textContent = '🔄 Baixando catálogo da planilha...';
             console.log('🔄 Baixando catálogo...');
-            console.log('URL:', URL_CSV);
 
             const resposta = await fetch(URL_CSV);
             if (!resposta.ok) throw new Error(`Erro HTTP: ${resposta.status}`);
@@ -873,8 +882,6 @@
             if (idx.unidade === -1)   idx.unidade = 3;
             if (idx.fator === -1)     idx.fator = 4;
 
-            console.log('📍 Índices mapeados:', idx);
-
             const carregado = [];
             for (let i = 1; i < linhas.length; i++) {
                 const cols = parseCSVLine(linhas[i], separador)
@@ -890,13 +897,15 @@
                     ativo = rawAtivo === 'N' ? 'N' : 'S';
                 }
 
+                const custoRaw = idx.custo !== -1 ? (cols[idx.custo] || '') : '';
+
                 carregado.push({
                     sku: cols[idx.codigo] || '',
                     codbarra: codbarra,
                     descricao: cols[idx.descricao] || '',
                     unidade: cols[idx.unidade] || 'UN',
                     fator: parseInt(cols[idx.fator]) || 1,
-                    custoRep: idx.custo !== -1 ? (cols[idx.custo] || '') : '',
+                    custoRep: parseCusto(custoRaw),
                     ativo: ativo
                 });
             }
@@ -908,7 +917,7 @@
             const totalInativos = catalogo.length - totalAtivos;
 
             statusTexto.innerHTML = `✅ Catálogo carregado: <strong>${catalogo.length}</strong> produtos (${totalAtivos} ativos, ${totalInativos} inativos)`;
-            console.log(`✅ Catálogo carregado: ${catalogo.length} produtos (${totalAtivos} ativos, ${totalInativos} inativos)`);
+            console.log(`✅ Catálogo carregado: ${catalogo.length} produtos`);
             return catalogo;
 
         } catch (erro) {
@@ -1075,6 +1084,9 @@
         }
     });
 
+    // ============================================================
+    // ADICIONAR ITEM (com cálculo de custo)
+    // ============================================================
     function adicionarItem() {
         const tipo = tipoSelect.value;
         const motivo = motivoSelect.value;
@@ -1087,6 +1099,7 @@
             return;
         }
 
+        // ------ Desconto: custo = valor digitado (o desconto É o prejuízo) ------
         if (tipo === 'Desconto') {
             itens.push({
                 sku: 'Desconto',
@@ -1095,7 +1108,9 @@
                 unidade: 'KG',
                 tipo: tipo,
                 motivo: motivo,
-                quantidade: quantidade
+                quantidade: quantidade,
+                custoUnitario: 1,
+                custoTotal: quantidade
             });
             limparCampos();
             renderizarTabela();
@@ -1103,12 +1118,12 @@
             return;
         }
 
+        // ------ Produto normal ------
         const codbarra = codigoInput.value.trim();
         if (!codbarra) { showToast('⚠️ Selecione um produto'); return; }
 
         const lista = getCatalogoFiltrado();
-        let produto = lista.find(p => p.codbarra === codbarra);
-
+        const produto = lista.find(p => p.codbarra === codbarra);
         if (!produto) {
             const naBase = catalogo.find(p => p.codbarra === codbarra);
             if (naBase && naBase.ativo === 'N' && !mostrarInativos) {
@@ -1119,6 +1134,9 @@
             return;
         }
 
+        const custoUnitario = Number(produto.custoRep) || 0;
+        const custoTotal = quantidade * custoUnitario;
+
         itens.push({
             sku: produto.sku,
             codbarra: produto.codbarra,
@@ -1126,7 +1144,9 @@
             unidade: produto.unidade,
             tipo: tipo,
             motivo: motivo,
-            quantidade: quantidade
+            quantidade: quantidade,
+            custoUnitario: custoUnitario,
+            custoTotal: custoTotal
         });
 
         limparCampos();
@@ -1142,7 +1162,7 @@
         codigoInput.value = '';
         descInput.value = '';
         unidadeInput.value = '';
-        qtdInput.value = '1';
+        qtdInput.value = '';        // <-- agora vazio
         tipoSelect.value = 'Quebra';
         motivoSelect.value = 'Validade';
         codigoInput.focus();
@@ -1205,7 +1225,9 @@
                 unidade: 'KG',
                 tipo: tipo,
                 motivo: motivo,
-                quantidade: quantidade
+                quantidade: quantidade,
+                custoUnitario: 1,
+                custoTotal: quantidade
             };
             limparCampos();
             renderizarTabela();
@@ -1228,6 +1250,9 @@
             return;
         }
 
+        const custoUnitario = Number(produto.custoRep) || 0;
+        const custoTotal = quantidade * custoUnitario;
+
         itens[editandoIndex] = {
             sku: produto.sku,
             codbarra: produto.codbarra,
@@ -1235,7 +1260,9 @@
             unidade: produto.unidade,
             tipo: tipo,
             motivo: motivo,
-            quantidade: quantidade
+            quantidade: quantidade,
+            custoUnitario: custoUnitario,
+            custoTotal: custoTotal
         };
 
         limparCampos();
@@ -1253,32 +1280,41 @@
         showToast('Item removido');
     }
 
+    // ============================================================
+    // RENDERIZAR TABELA (com colunas de custo)
+    // ============================================================
     function renderizarTabela() {
         const tbody = document.getElementById('corpoTabela');
         const totalItensSpan = document.getElementById('totalItens');
         const totalUnidadesSpan = document.getElementById('totalUnidades');
+        const totalCustoSpan = document.getElementById('totalCusto');
         const contadorSpan = document.getElementById('contadorItens');
 
         if (itens.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="empty-message">Nenhum item registrado ainda.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="empty-message">Nenhum item registrado ainda.</td></tr>`;
             totalItensSpan.textContent = '0';
             totalUnidadesSpan.textContent = '0';
+            totalCustoSpan.textContent = formatarMoeda(0);
             contadorSpan.textContent = '0 itens';
             return;
         }
 
         let html = '';
         let somaUnidades = 0;
+        let somaCusto = 0;
         itens.forEach((item, index) => {
             somaUnidades += item.quantidade;
+            somaCusto += (item.custoTotal || 0);
             const isEditando = (editandoIndex === index);
             html += `<tr style="${isEditando ? 'background:var(--accent-light);' : ''}">
                 <td>${index + 1}</td>
                 <td>${escHtml(item.descricao)}</td>
                 <td>${item.tipo}</td>
                 <td class="qtd-cell">${formatarQtd(item.quantidade)}</td>
+                <td style="text-align:center;">${item.unidade}</td>
                 <td>${item.motivo}</td>
-                <td>${item.unidade}</td>
+                <td class="custo-cell">${formatarMoeda(item.custoUnitario || 0)}</td>
+                <td class="custo-total-cell">${formatarMoeda(item.custoTotal || 0)}</td>
                 <td style="text-align:center;white-space:nowrap;">
                     <button class="btn-edit" onclick="iniciarEdicao(${index})" title="Editar">✏️</button>
                     <button class="btn-remove" onclick="removerItem(${index})" title="Remover">✕</button>
@@ -1289,6 +1325,7 @@
         tbody.innerHTML = html;
         totalItensSpan.textContent = itens.length;
         totalUnidadesSpan.textContent = formatarQtd(somaUnidades);
+        totalCustoSpan.textContent = formatarMoeda(somaCusto);
         contadorSpan.textContent = `${itens.length} itens`;
     }
 
@@ -1309,7 +1346,7 @@
     }
 
     // ============================================================
-    // SALVAR NO HISTÓRICO — ENVIA EM LOTES (evita erro 400)
+    // SALVAR NO HISTÓRICO — ENVIA EM LOTES
     // ============================================================
     async function salvarNoHistorico() {
         if (itens.length === 0) {
@@ -1339,11 +1376,9 @@
                 const fim = Math.min(inicio + TAMANHO_LOTE, total);
                 const itensLote = itens.slice(inicio, fim);
 
-                // Sufixo no ID: -01, -02, ... quando houver mais de 1 lote
                 const sufixo = totalLotes > 1 ? '-' + String(lote + 1).padStart(2, '0') : '';
                 const idLote = idBase + sufixo;
 
-                // Sufixo na observação
                 const obs = totalLotes > 1
                     ? (observacaoBase ? observacaoBase + ' ' : '') + `(lote ${lote + 1}/${totalLotes})`
                     : observacaoBase;
@@ -1361,25 +1396,22 @@
                         quantidade: Number(item.quantidade),
                         unidade: item.unidade,
                         tipo: item.tipo,
-                        motivo: item.motivo
+                        motivo: item.motivo,
+                        custoUnitario: Number(item.custoUnitario || 0),
+                        custoTotal: Number(item.custoTotal || 0)
                     }))
                 };
 
                 const urlComDados = URL_SCRIPT + '?dados=' + encodeURIComponent(JSON.stringify(dados));
-                console.log(`📤 Lote ${lote + 1}/${totalLotes} (${itensLote.length} itens) — URL: ${urlComDados.length} caracteres`);
+                console.log(`📤 Lote ${lote + 1}/${totalLotes} (${itensLote.length} itens) — URL ${urlComDados.length} chars`);
 
-                // Aviso se a URL ficar grande demais
                 if (urlComDados.length > 7500) {
-                    console.warn(`⚠️ URL do lote ${lote + 1} está com ${urlComDados.length} caracteres. Considere reduzir TAMANHO_LOTE.`);
+                    console.warn(`⚠️ URL grande demais no lote ${lote + 1}.`);
                     todosOk = false;
                 }
 
-                await fetch(urlComDados, {
-                    method: 'GET',
-                    mode: 'no-cors'
-                });
+                await fetch(urlComDados, { method: 'GET', mode: 'no-cors' });
 
-                // Pequeno intervalo entre lotes
                 if (lote < totalLotes - 1) {
                     await new Promise(r => setTimeout(r, 800));
                 }
@@ -1433,13 +1465,16 @@
         if (observacao) resumo += `Obs: ${observacao}\n`;
         resumo += '─'.repeat(48) + '\n';
         resumo += `ITENS (${itens.length}):\n`;
+        let totalCustoGeral = 0;
         itens.forEach((item, i) => {
-            resumo += `${i+1}. ${item.descricao} | ${item.tipo} | ${formatarQtd(item.quantidade)} ${item.unidade} | ${item.motivo}\n`;
+            totalCustoGeral += (item.custoTotal || 0);
+            resumo += `${i+1}. ${item.descricao} | ${item.tipo} | ${formatarQtd(item.quantidade)} ${item.unidade} | ${item.motivo} | ${formatarMoeda(item.custoTotal || 0)}\n`;
         });
         resumo += '─'.repeat(48) + '\n';
         const totalUnidades = itens.reduce((acc, item) => acc + item.quantidade, 0);
         resumo += `Total de itens: ${itens.length}\n`;
         resumo += `Total de unidades: ${formatarQtd(totalUnidades)}\n`;
+        resumo += `PREJUÍZO TOTAL: ${formatarMoeda(totalCustoGeral)}\n`;
         resumo += '═'.repeat(48) + '\n';
         resumo += 'Assinatura do responsável: ___________________\n';
 
