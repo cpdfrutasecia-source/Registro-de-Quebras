@@ -21,6 +21,8 @@
             --green: #1a9e6b;
             --red: #e54c4c;
             --amber: #d97706;
+            --purple: #6b4c9a;
+            --purple-light: #f1ebfa;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
             --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
             --radius: 10px;
@@ -82,7 +84,7 @@
             cursor: pointer;
         }
         .page {
-            max-width: 1050px;
+            max-width: 1100px;
             margin: 0 auto;
             padding: 32px 24px 100px;
         }
@@ -190,7 +192,7 @@
             background: var(--surface);
             border: 1.5px solid var(--border);
             border-radius: var(--radius-sm);
-            max-height: 200px;
+            max-height: 240px;
             overflow-y: auto;
             z-index: 100;
             display: none;
@@ -220,6 +222,17 @@
             color: white;
             font-size: 9.5px;
             font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .autocomplete-suggestions .suggestion .badge-depto {
+            display: inline-block;
+            background: var(--purple-light);
+            color: var(--purple);
+            font-size: 9.5px;
+            font-weight: 600;
             padding: 1px 6px;
             border-radius: 4px;
             margin-left: 6px;
@@ -313,9 +326,15 @@
         .add-field.qtd { flex: 0.5; }
         .add-field.custo { flex: 0.8; }
         .add-field.unidade { flex: 0.4; }
+        .add-field.departamento { flex: 1.2; }
         .add-field.custo input {
             font-weight: 600;
             color: var(--red);
+        }
+        .add-field.departamento input {
+            font-weight: 500;
+            color: var(--purple);
+            background: var(--purple-light);
         }
         .btn-add {
             padding: 8px 20px;
@@ -373,7 +392,7 @@
         }
         .items-table th {
             text-align: left;
-            padding: 10px 10px;
+            padding: 10px 8px;
             background: var(--surface-alt);
             border-bottom: 1px solid var(--border);
             font-weight: 600;
@@ -383,7 +402,7 @@
             letter-spacing: 0.4px;
         }
         .items-table td {
-            padding: 10px 10px;
+            padding: 10px 8px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
         }
@@ -391,6 +410,16 @@
         .items-table .qtd-cell { text-align: center; font-weight: 500; }
         .items-table .custo-cell { text-align: right; font-weight: 500; color: var(--text-secondary); }
         .items-table .custo-total-cell { text-align: right; font-weight: 700; color: var(--red); }
+        .items-table .depto-cell {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--purple);
+            background: var(--purple-light);
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            white-space: nowrap;
+        }
         .btn-remove {
             background: none;
             border: none;
@@ -622,6 +651,10 @@
             <label>Produto</label>
             <input type="text" id="descProd" placeholder="Produto" readonly style="background:#f5f4f1;" />
         </div>
+        <div class="add-field departamento">
+            <label>Departamento</label>
+            <input type="text" id="deptoProd" placeholder="-" readonly />
+        </div>
         <div class="add-field tipo">
             <label>Tipo</label>
             <select id="tipoProd">
@@ -650,8 +683,8 @@
             <input type="number" id="qtdProd" value="" min="0.001" step="0.001" placeholder="0" />
         </div>
         <div class="add-field custo">
-            <label>Valor (R$)</label>
-            <input type="number" id="custoTotalProd" value="" min="0" step="0.01" placeholder="0,00" />
+            <label>Custo Un. (R$)</label>
+            <input type="number" id="custoUnitProd" value="" min="0" step="0.01" placeholder="0,00" />
         </div>
         <div class="add-field unidade">
             <label>Un.</label>
@@ -670,22 +703,23 @@
             <thead>
                 <tr>
                     <th style="width:4%;">#</th>
-                    <th style="width:20%;">Produto</th>
-                    <th style="width:14%;">Tipo</th>
+                    <th style="width:18%;">Produto</th>
+                    <th style="width:13%;">Departamento</th>
+                    <th style="width:12%;">Tipo</th>
                     <th style="width:7%;">Qtd</th>
-                    <th style="width:6%;">Un.</th>
-                    <th style="width:15%;">Motivo</th>
-                    <th style="width:9%;">Custo Un.</th>
-                    <th style="width:10%;">Valor</th>
-                    <th style="width:8%;text-align:center">Ações</th>
+                    <th style="width:5%;">Un.</th>
+                    <th style="width:13%;">Motivo</th>
+                    <th style="width:8%;">Custo Un.</th>
+                    <th style="width:9%;">Valor</th>
+                    <th style="width:7%;text-align:center">Ações</th>
                 </tr>
             </thead>
             <tbody id="corpoTabela">
-                <tr><td colspan="9" class="empty-message">Nenhum item registrado ainda.</td></tr>
+                <tr><td colspan="10" class="empty-message">Nenhum item registrado ainda.</td></tr>
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="9" style="padding:0;">
+                    <td colspan="10" style="padding:0;">
                         <div class="totals-bar">
                             <span>Itens: <span class="value" id="totalItens">0</span></span>
                             <span>Total unidades: <span class="value highlight" id="totalUnidades">0</span></span>
@@ -725,12 +759,12 @@
     // CATÁLOGO DE FALLBACK
     // ============================================================
     const catalogoFallback = [
-        { sku: '1', codbarra: '1', descricao: 'ABACATE KG', unidade: 'KG', fator: 18, custoRep: 5.90, ativo: 'S' },
-        { sku: '2', codbarra: '2', descricao: 'ABACATE BREDA KG', unidade: 'UN', fator: 1, custoRep: 0.10, ativo: 'S' },
-        { sku: '3', codbarra: '3', descricao: 'ABACATE FORTUNE KG', unidade: 'UN', fator: 18, custoRep: 0.10, ativo: 'S' },
-        { sku: '4', codbarra: '4', descricao: 'ABACAXI HAWAI UN', unidade: 'UN', fator: 1, custoRep: 0.10, ativo: 'S' },
-        { sku: '5', codbarra: '5', descricao: 'ABACAXI PEROLA UN', unidade: 'UN', fator: 5, custoRep: 0.10, ativo: 'S' },
-        { sku: '6', codbarra: '6', descricao: 'ABACAXI PICADO POT150G', unidade: 'UN', fator: 1, custoRep: 0.10, ativo: 'S' }
+        { sku: '1', codbarra: '1', descricao: 'ABACATE KG', unidade: 'KG', fator: 18, custoRep: 5.90, ativo: 'S', departamento: 'HORTIFRUTI' },
+        { sku: '2', codbarra: '2', descricao: 'ABACATE BREDA KG', unidade: 'UN', fator: 1, custoRep: 0.10, ativo: 'S', departamento: 'HORTIFRUTI' },
+        { sku: '3', codbarra: '3', descricao: 'ABACATE FORTUNE KG', unidade: 'UN', fator: 18, custoRep: 0.10, ativo: 'S', departamento: 'HORTIFRUTI' },
+        { sku: '4', codbarra: '4', descricao: 'ABACAXI HAWAI UN', unidade: 'UN', fator: 1, custoRep: 0.10, ativo: 'S', departamento: 'HORTIFRUTI' },
+        { sku: '5', codbarra: '5', descricao: 'ABACAXI PEROLA UN', unidade: 'UN', fator: 5, custoRep: 0.10, ativo: 'S', departamento: 'HORTIFRUTI' },
+        { sku: '6', codbarra: '6', descricao: 'ABACAXI PICADO POT150G', unidade: 'UN', fator: 1, custoRep: 0.10, ativo: 'S', departamento: 'HORTIFRUTI' }
     ];
 
     // ============================================================
@@ -740,18 +774,18 @@
     let itens = [];
     let editandoIndex = null;
     let mostrarInativos = false;
-    let produtoAtual = null;             // produto atualmente carregado no form
-    let custoEditadoManualmente = false; // se o operador mexeu no campo Valor
+    let produtoAtual = null;
 
     // ============================================================
     // REFERÊNCIAS DOM
     // ============================================================
     const codigoInput = document.getElementById('codigoProd');
     const descInput = document.getElementById('descProd');
+    const deptoInput = document.getElementById('deptoProd');
     const tipoSelect = document.getElementById('tipoProd');
     const motivoSelect = document.getElementById('motivoProd');
     const qtdInput = document.getElementById('qtdProd');
-    const custoTotalProdInput = document.getElementById('custoTotalProd');
+    const custoUnitProdInput = document.getElementById('custoUnitProd');
     const unidadeInput = document.getElementById('unidadeProd');
     const pesquisaInput = document.getElementById('pesquisaProduto');
     const suggestionsDiv = document.getElementById('suggestionsPesquisa');
@@ -795,16 +829,14 @@
     function lerQuantidade() {
         const raw = (qtdInput.value || '').toString().trim();
         if (raw === '') return 0;
-        const normalizado = raw.replace(',', '.');
-        const n = parseFloat(normalizado);
+        const n = parseFloat(raw.replace(',', '.'));
         return isNaN(n) ? 0 : n;
     }
 
-    function lerCustoTotal() {
-        const raw = (custoTotalProdInput.value || '').toString().trim();
+    function lerCustoUnitario() {
+        const raw = (custoUnitProdInput.value || '').toString().trim();
         if (raw === '') return 0;
-        const normalizado = raw.replace(',', '.');
-        const n = parseFloat(normalizado);
+        const n = parseFloat(raw.replace(',', '.'));
         return isNaN(n) ? 0 : n;
     }
 
@@ -880,13 +912,14 @@
             console.log('📋 Cabeçalho detectado:', cabecalho);
 
             const idx = {
-                codigo:    cabecalho.findIndex(c => /^CODIGO$|^CÓDIGO$|^SKU$/.test(c)),
-                codbarra:  cabecalho.findIndex(c => /CODBARRA|CODBARR|COD\.?\s*BARRAS|^BARRAS$/.test(c)),
-                descricao: cabecalho.findIndex(c => /DESCRICAO|DESCRIÇÃO|^PRODUTO$/.test(c)),
-                unidade:   cabecalho.findIndex(c => /^UNIDADE$|^UN$/.test(c)),
-                fator:     cabecalho.findIndex(c => /FATORCX|^FATOR$/.test(c)),
-                custo:     cabecalho.findIndex(c => /CUSTO\s*REP|^CUSTO/.test(c)),
-                ativo:     cabecalho.findIndex(c => /^ATIVO$|^ATIVO\??$/.test(c))
+                codigo:       cabecalho.findIndex(c => /^CODIGO$|^CÓDIGO$|^SKU$/.test(c)),
+                codbarra:     cabecalho.findIndex(c => /CODBARRA|CODBARR|COD\.?\s*BARRAS|^BARRAS$/.test(c)),
+                descricao:    cabecalho.findIndex(c => /DESCRICAO|DESCRIÇÃO|^PRODUTO$/.test(c)),
+                unidade:      cabecalho.findIndex(c => /^UNIDADE$|^UN$/.test(c)),
+                fator:        cabecalho.findIndex(c => /FATORCX|^FATOR$/.test(c)),
+                custo:        cabecalho.findIndex(c => /CUSTO\s*REP|CUSTO_REPOSICAO|^CUSTO/.test(c)),
+                ativo:        cabecalho.findIndex(c => /^ATIVO$|^ATIVO\??$/.test(c)),
+                departamento: cabecalho.findIndex(c => /^DEPARTAMENTO$|^DEPTO$|^DEPT$|^SETOR$/.test(c))
             };
 
             if (idx.codigo === -1)    idx.codigo = 0;
@@ -894,6 +927,8 @@
             if (idx.descricao === -1) idx.descricao = 2;
             if (idx.unidade === -1)   idx.unidade = 3;
             if (idx.fator === -1)     idx.fator = 4;
+
+            console.log('📍 Índices mapeados:', idx);
 
             const carregado = [];
             for (let i = 1; i < linhas.length; i++) {
@@ -911,6 +946,7 @@
                 }
 
                 const custoRaw = idx.custo !== -1 ? (cols[idx.custo] || '') : '';
+                const deptoRaw = idx.departamento !== -1 ? (cols[idx.departamento] || '') : '';
 
                 carregado.push({
                     sku: cols[idx.codigo] || '',
@@ -919,7 +955,8 @@
                     unidade: cols[idx.unidade] || 'UN',
                     fator: parseInt(cols[idx.fator]) || 1,
                     custoRep: parseCusto(custoRaw),
-                    ativo: ativo
+                    ativo: ativo,
+                    departamento: deptoRaw || 'NÃO INFORMADO'
                 });
             }
 
@@ -928,8 +965,9 @@
             catalogo = carregado;
             const totalAtivos = catalogo.filter(p => p.ativo === 'S').length;
             const totalInativos = catalogo.length - totalAtivos;
+            const totalDeptos = new Set(catalogo.map(p => p.departamento)).size;
 
-            statusTexto.innerHTML = `✅ Catálogo carregado: <strong>${catalogo.length}</strong> produtos (${totalAtivos} ativos, ${totalInativos} inativos)`;
+            statusTexto.innerHTML = `✅ Catálogo carregado: <strong>${catalogo.length}</strong> produtos (${totalAtivos} ativos, ${totalInativos} inativos, ${totalDeptos} departamentos)`;
             console.log(`✅ Catálogo carregado: ${catalogo.length} produtos`);
             return catalogo;
 
@@ -972,57 +1010,20 @@
     preencherDataHora();
 
     // ============================================================
-    // ATUALIZA O CAMPO "VALOR" COM BASE NO PRODUTO + QTD
-    // (só sobrescreve se o operador não tiver editado manualmente)
+    // PREENCHER CAMPOS DO PRODUTO
     // ============================================================
-    function atualizarCustoTotalAutomatico() {
-        // Não mexe se o operador editou manualmente e a qtd/produto não mudaram
-        if (custoEditadoManualmente) return;
-
-        const qtd = lerQuantidade();
-
-        if (tipoSelect.value === 'Desconto') {
-            // No modo Desconto, o valor é a própria qtd
-            custoTotalProdInput.value = qtd > 0 ? qtd.toFixed(2) : '';
-            return;
-        }
-
-        if (!produtoAtual) {
-            custoTotalProdInput.value = '';
-            return;
-        }
-
-        const custoUnit = Number(produtoAtual.custoRep) || 0;
-        const total = qtd * custoUnit;
-        custoTotalProdInput.value = total > 0 ? total.toFixed(2) : '';
-    }
-
     function preencherCampos(produto) {
         if (!produto) return;
         produtoAtual = produto;
         codigoInput.value = produto.codbarra;
         descInput.value = produto.descricao;
         unidadeInput.value = produto.unidade;
+        deptoInput.value = produto.departamento || 'NÃO INFORMADO';
 
-        // Reseta a flag de edição manual e recalcula
-        custoEditadoManualmente = false;
-        atualizarCustoTotalAutomatico();
+        // Custo Unitário: preenche com o valor do cadastro
+        const custo = Number(produto.custoRep) || 0;
+        custoUnitProdInput.value = custo > 0 ? custo.toFixed(2) : '';
     }
-
-    // ============================================================
-    // EVENTOS: qtd e custo total
-    // ============================================================
-    qtdInput.addEventListener('input', function() {
-        // Ao mudar a qtd, recalcula o valor (a menos que esteja editando manualmente)
-        if (!custoEditadoManualmente) {
-            atualizarCustoTotalAutomatico();
-        }
-    });
-
-    custoTotalProdInput.addEventListener('input', function() {
-        // Se o operador mexeu, marca como editado
-        custoEditadoManualmente = true;
-    });
 
     // ============================================================
     // MODO DESCONTO
@@ -1034,22 +1035,22 @@
             codigoInput.style.background = '#f5f4f1';
             descInput.value = 'Desconto';
             unidadeInput.value = 'KG';
+            deptoInput.value = 'DESCONTO';
             produtoAtual = null;
-            custoEditadoManualmente = false;
             qtdInput.value = '';
-            custoTotalProdInput.value = '';
+            custoUnitProdInput.value = '1';
             qtdInput.focus();
-            showToast('💸 Modo Desconto: informe a qtd em KG e o valor');
+            showToast('💸 Modo Desconto: informe a quantidade (KG) e o custo unitário');
         } else {
             if (codigoInput.value === 'Desconto') {
                 codigoInput.value = '';
                 descInput.value = '';
                 unidadeInput.value = '';
-                custoTotalProdInput.value = '';
+                deptoInput.value = '';
+                custoUnitProdInput.value = '';
             }
             codigoInput.removeAttribute('readonly');
             codigoInput.style.background = '';
-            custoEditadoManualmente = false;
         }
     });
 
@@ -1059,8 +1060,9 @@
         if (cod === '') {
             descInput.value = '';
             unidadeInput.value = '';
+            deptoInput.value = '';
+            custoUnitProdInput.value = '';
             produtoAtual = null;
-            custoTotalProdInput.value = '';
             return;
         }
         const lista = getCatalogoFiltrado();
@@ -1082,8 +1084,9 @@
             }
             descInput.value = '';
             unidadeInput.value = '';
+            deptoInput.value = '';
+            custoUnitProdInput.value = '';
             produtoAtual = null;
-            custoTotalProdInput.value = '';
         }
     });
 
@@ -1096,7 +1099,7 @@
     // ============================================================
     function matchesQuery(produto, query) {
         const words = query.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
-        const text = produto.descricao.toLowerCase();
+        const text = (produto.descricao + ' ' + produto.departamento + ' ' + produto.codbarra).toLowerCase();
         return words.every(word => text.includes(word));
     }
 
@@ -1112,12 +1115,16 @@
             const limited = matches.slice(0, 10);
             suggestionsDiv.innerHTML = limited.map(p => {
                 const inativo = p.ativo === 'N';
+                const deptoHtml = p.departamento
+                    ? `<span class="badge-depto">${p.departamento}</span>`
+                    : '';
                 return `<div class="suggestion ${inativo ? 'inativo' : ''}"
                              data-codbarra="${p.codbarra}"
                              data-desc="${p.descricao}"
                              data-unidade="${p.unidade}"
                              data-ativo="${p.ativo}">
                     <strong>${p.codbarra}</strong> — ${p.descricao} <em>(${p.unidade})</em>
+                    ${deptoHtml}
                     ${inativo ? '<span class="badge-inativo">INATIVO</span>' : ''}
                 </div>`;
             }).join('');
@@ -1164,9 +1171,10 @@
         const tipo = tipoSelect.value;
         const motivo = motivoSelect.value;
         const quantidade = lerQuantidade();
-        const valorTotal = lerCustoTotal();
+        const custoUnitario = lerCustoUnitario();
 
         if (quantidade <= 0) { showToast('⚠️ Quantidade deve ser maior que 0'); return; }
+        if (custoUnitario <= 0) { showToast('⚠️ Custo unitário deve ser maior que 0'); return; }
 
         if (editandoIndex !== null) {
             salvarEdicao();
@@ -1183,8 +1191,9 @@
                 tipo: tipo,
                 motivo: motivo,
                 quantidade: quantidade,
-                custoUnitario: valorTotal > 0 && quantidade > 0 ? valorTotal / quantidade : 0,
-                custoTotal: valorTotal
+                custoUnitario: custoUnitario,
+                custoTotal: quantidade * custoUnitario,
+                departamento: 'DESCONTO'
             });
             limparCampos();
             renderizarTabela();
@@ -1208,13 +1217,6 @@
             return;
         }
 
-        // Se o operador não mexeu no valor, calcula com base no cadastro
-        let custoTotal = valorTotal;
-        if (!custoEditadoManualmente || valorTotal === 0) {
-            custoTotal = quantidade * (Number(produto.custoRep) || 0);
-        }
-        const custoUnitario = quantidade > 0 ? custoTotal / quantidade : 0;
-
         itens.push({
             sku: produto.sku,
             codbarra: produto.codbarra,
@@ -1224,7 +1226,8 @@
             motivo: motivo,
             quantidade: quantidade,
             custoUnitario: custoUnitario,
-            custoTotal: custoTotal
+            custoTotal: quantidade * custoUnitario,
+            departamento: produto.departamento || 'NÃO INFORMADO'
         });
 
         limparCampos();
@@ -1240,14 +1243,14 @@
         codigoInput.value = '';
         descInput.value = '';
         unidadeInput.value = '';
+        deptoInput.value = '';
         qtdInput.value = '';
-        custoTotalProdInput.value = '';
+        custoUnitProdInput.value = '';
         tipoSelect.value = 'Quebra';
         motivoSelect.value = 'Validade';
         codigoInput.focus();
         editandoIndex = null;
         produtoAtual = null;
-        custoEditadoManualmente = false;
         btnAdicionar.style.display = 'inline-flex';
         btnSalvarEdicao.style.display = 'none';
         document.querySelectorAll('.add-field input, .add-field select').forEach(el => {
@@ -1263,12 +1266,13 @@
         tipoSelect.value = item.tipo;
         motivoSelect.value = item.motivo;
         qtdInput.value = formatarQtd(item.quantidade);
-        custoTotalProdInput.value = (item.custoTotal || 0).toFixed(2);
+        custoUnitProdInput.value = (item.custoUnitario || 0).toFixed(2);
 
         if (item.tipo === 'Desconto') {
             codigoInput.value = 'Desconto';
             descInput.value = 'Desconto';
             unidadeInput.value = 'KG';
+            deptoInput.value = 'DESCONTO';
             codigoInput.setAttribute('readonly', 'readonly');
             codigoInput.style.background = '#f5f4f1';
             produtoAtual = null;
@@ -1278,11 +1282,9 @@
             codigoInput.value = item.codbarra;
             descInput.value = item.descricao;
             unidadeInput.value = item.unidade;
+            deptoInput.value = item.departamento || 'NÃO INFORMADO';
             produtoAtual = catalogo.find(p => p.codbarra === item.codbarra) || null;
         }
-
-        // Marca como editado para não sobrescrever o valor que o operador está vendo
-        custoEditadoManualmente = true;
 
         btnAdicionar.style.display = 'none';
         btnSalvarEdicao.style.display = 'inline-flex';
@@ -1301,9 +1303,10 @@
         const tipo = tipoSelect.value;
         const motivo = motivoSelect.value;
         const quantidade = lerQuantidade();
-        const valorTotal = lerCustoTotal();
+        const custoUnitario = lerCustoUnitario();
 
         if (quantidade <= 0) { showToast('⚠️ Quantidade deve ser maior que 0'); return; }
+        if (custoUnitario <= 0) { showToast('⚠️ Custo unitário deve ser maior que 0'); return; }
 
         if (tipo === 'Desconto') {
             itens[editandoIndex] = {
@@ -1314,8 +1317,9 @@
                 tipo: tipo,
                 motivo: motivo,
                 quantidade: quantidade,
-                custoUnitario: quantidade > 0 ? valorTotal / quantidade : 0,
-                custoTotal: valorTotal
+                custoUnitario: custoUnitario,
+                custoTotal: quantidade * custoUnitario,
+                departamento: 'DESCONTO'
             };
             limparCampos();
             renderizarTabela();
@@ -1338,12 +1342,6 @@
             return;
         }
 
-        let custoTotal = valorTotal;
-        if (!custoEditadoManualmente || valorTotal === 0) {
-            custoTotal = quantidade * (Number(produto.custoRep) || 0);
-        }
-        const custoUnitario = quantidade > 0 ? custoTotal / quantidade : 0;
-
         itens[editandoIndex] = {
             sku: produto.sku,
             codbarra: produto.codbarra,
@@ -1353,7 +1351,8 @@
             motivo: motivo,
             quantidade: quantidade,
             custoUnitario: custoUnitario,
-            custoTotal: custoTotal
+            custoTotal: quantidade * custoUnitario,
+            departamento: produto.departamento || 'NÃO INFORMADO'
         };
 
         limparCampos();
@@ -1379,7 +1378,7 @@
         const contadorSpan = document.getElementById('contadorItens');
 
         if (itens.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9" class="empty-message">Nenhum item registrado ainda.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="10" class="empty-message">Nenhum item registrado ainda.</td></tr>`;
             totalItensSpan.textContent = '0';
             totalUnidadesSpan.textContent = '0';
             totalCustoSpan.textContent = formatarMoeda(0);
@@ -1397,6 +1396,7 @@
             html += `<tr style="${isEditando ? 'background:var(--accent-light);' : ''}">
                 <td>${index + 1}</td>
                 <td>${escHtml(item.descricao)}</td>
+                <td><span class="depto-cell">${escHtml(item.departamento || 'NÃO INFORMADO')}</span></td>
                 <td>${item.tipo}</td>
                 <td class="qtd-cell">${formatarQtd(item.quantidade)}</td>
                 <td style="text-align:center;">${item.unidade}</td>
@@ -1456,8 +1456,6 @@
         const total = itens.length;
         const totalLotes = Math.ceil(total / TAMANHO_LOTE);
 
-        let todosOk = true;
-
         try {
             for (let lote = 0; lote < totalLotes; lote++) {
                 const inicio = lote * TAMANHO_LOTE;
@@ -1486,17 +1484,13 @@
                         tipo: item.tipo,
                         motivo: item.motivo,
                         custoUnitario: Number(item.custoUnitario || 0),
-                        custoTotal: Number(item.custoTotal || 0)
+                        custoTotal: Number(item.custoTotal || 0),
+                        departamento: item.departamento || ''
                     }))
                 };
 
                 const urlComDados = URL_SCRIPT + '?dados=' + encodeURIComponent(JSON.stringify(dados));
                 console.log(`📤 Lote ${lote + 1}/${totalLotes} (${itensLote.length} itens) — URL ${urlComDados.length} chars`);
-
-                if (urlComDados.length > 7500) {
-                    console.warn(`⚠️ URL grande demais no lote ${lote + 1}.`);
-                    todosOk = false;
-                }
 
                 await fetch(urlComDados, { method: 'GET', mode: 'no-cors' });
 
@@ -1556,7 +1550,7 @@
         let totalCustoGeral = 0;
         itens.forEach((item, i) => {
             totalCustoGeral += (item.custoTotal || 0);
-            resumo += `${i+1}. ${item.descricao} | ${item.tipo} | ${formatarQtd(item.quantidade)} ${item.unidade} | ${item.motivo} | ${formatarMoeda(item.custoTotal || 0)}\n`;
+            resumo += `${i+1}. [${item.departamento}] ${item.descricao} | ${item.tipo} | ${formatarQtd(item.quantidade)} ${item.unidade} | ${item.motivo} | ${formatarMoeda(item.custoTotal || 0)}\n`;
         });
         resumo += '─'.repeat(48) + '\n';
         const totalUnidades = itens.reduce((acc, item) => acc + item.quantidade, 0);
@@ -1585,7 +1579,7 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const active = document.activeElement;
-            if (active && (active.id === 'qtdProd' || active.id === 'codigoProd' || active.id === 'descProd' || active.id === 'custoTotalProd')) {
+            if (active && (active.id === 'qtdProd' || active.id === 'codigoProd' || active.id === 'descProd' || active.id === 'custoUnitProd')) {
                 e.preventDefault();
                 adicionarItem();
             }
